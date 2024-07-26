@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:music_app}
+    username: ${POSTGRES_USERNAME:postgres}
+    password: ${POSTGRES_PASSWORD:admin}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+
