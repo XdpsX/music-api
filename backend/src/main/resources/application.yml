@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   profiles:
     active: dev
   servlet:
@@ -6,4 +8,11 @@ spring:
       max-file-size: 10MB
 server:
   servlet:
-    context-path: /api/${API_VERSION:v1}/
+    context-path: /api/${API_VERSION:v1}
+
+aws:
+  region: ${AWS_REGION}
+  accessKey: ${AWS_ACCESS_KEY}
+  secretKey: ${AWS_SECRET_KEY}
+  bucket:
+    name: ${AWS_BUCKET_NAME}
