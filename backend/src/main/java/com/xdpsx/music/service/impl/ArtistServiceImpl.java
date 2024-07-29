@@ -20,14 +20,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.xdpsx.music.constant.FileContants.ARTISTS_IMG_FOLDER;
+
 @Service
 @RequiredArgsConstructor
 public class ArtistServiceImpl implements ArtistService {
     private final FileService fileService;
     private final ArtistMapper artistMapper;
     private final ArtistRepository artistRepository;
-
-    private final static String IMG_FOLDER = "artists";
 
     @Override
     public PageResponse<ArtistResponse> getAllArtists(ArtistParams params) {
@@ -51,7 +51,7 @@ public class ArtistServiceImpl implements ArtistService {
     public ArtistResponse createArtist(ArtistRequest request, MultipartFile image) {
         Artist artist = artistMapper.fromRequestToEntity(request);
         if (image != null){
-            String imageUrl = fileService.uploadFile(image, IMG_FOLDER);
+            String imageUrl = fileService.uploadFile(image, ARTISTS_IMG_FOLDER);
             artist.setAvatar(imageUrl);
         }
 
@@ -71,7 +71,7 @@ public class ArtistServiceImpl implements ArtistService {
         String oldImage = null;
         if (image != null){
             oldImage = artist.getAvatar();
-            String imageUrl = fileService.uploadFile(image, IMG_FOLDER);
+            String imageUrl = fileService.uploadFile(image, ARTISTS_IMG_FOLDER);
             artist.setAvatar(imageUrl);
         }
 

@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.constant.FileContants;
 import com.xdpsx.music.dto.request.GenreRequest;
 import com.xdpsx.music.dto.response.GenreResponse;
 import com.xdpsx.music.entity.Genre;
@@ -16,6 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.xdpsx.music.constant.FileContants.GENRES_IMG_FOLDER;
+
 @Service
 @RequiredArgsConstructor
 public class GenreServiceImpl implements GenreService {
@@ -23,15 +26,13 @@ public class GenreServiceImpl implements GenreService {
     private final FileService fileService;
     private final GenreRepository genreRepository;
 
-    private final static String IMG_FOLDER = "genres";
-
     @Override
     public GenreResponse createGenre(GenreRequest request, MultipartFile image) {
             if (genreRepository.existsByName(request.getName())){
                 throw new BadRequestException(String.format("Genre with name=%s has already existed", request.getName()));
             }
             Genre genre = genreMapper.fromRequestToEntity(request);
-            String imageUrl = fileService.uploadFile(image, IMG_FOLDER);
+            String imageUrl = fileService.uploadFile(image, GENRES_IMG_FOLDER);
             genre.setImage(imageUrl);
             Genre createdGenre = genreRepository.save(genre);
             return genreMapper.fromEntityToResponse(createdGenre);
