@@ -1,7 +1,9 @@
 package com.xdpsx.music.controller;
 
+import com.xdpsx.music.dto.request.ArtistParams;
 import com.xdpsx.music.dto.request.ArtistRequest;
 import com.xdpsx.music.dto.response.ArtistResponse;
+import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.service.ArtistService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -9,8 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/artists")
@@ -49,8 +49,10 @@ public class ArtistController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ArtistResponse>> getAllArtists() {
-        List<ArtistResponse> artists = artistService.getAllArtists();
-        return ResponseEntity.ok(artists);
+    public ResponseEntity<PageResponse<ArtistResponse>> getAllArtists(
+            @Valid ArtistParams params
+    ) {
+        PageResponse<ArtistResponse> responses = artistService.getAllArtists(params);
+        return ResponseEntity.ok(responses);
     }
 }

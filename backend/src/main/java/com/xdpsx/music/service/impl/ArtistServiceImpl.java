@@ -1,7 +1,9 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.dto.request.ArtistParams;
 import com.xdpsx.music.dto.request.ArtistRequest;
 import com.xdpsx.music.dto.response.ArtistResponse;
+import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.entity.Artist;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.ArtistMapper;
@@ -9,6 +11,9 @@ import com.xdpsx.music.repository.ArtistRepository;
 import com.xdpsx.music.service.ArtistService;
 import com.xdpsx.music.service.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,11 +30,21 @@ public class ArtistServiceImpl implements ArtistService {
     private final static String IMG_FOLDER = "artists";
 
     @Override
-    public List<ArtistResponse> getAllArtists() {
-        List<Artist> artists = artistRepository.findAll();
-        return artists.stream()
+    public PageResponse<ArtistResponse> getAllArtists(ArtistParams params) {
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Artist> artistPage = artistRepository.findWithFilters(
+                pageable, params.getSearch(), params.getSort(), params.getGender()
+        );
+        List<ArtistResponse> responses = artistPage.getContent().stream()
                 .map(artistMapper::fromEntityToResponse)
                 .collect(Collectors.toList());
+        return PageResponse.<ArtistResponse>builder()
+                .items(responses)
+                .pageNum(artistPage.getNumber() + 1)
+                .pageSize(artistPage.getSize())
+                .totalItems(artistPage.getTotalElements())
+                .totalPages(artistPage  .getTotalPages())
+                .build();
     }
 
     @Override
