@@ -38,8 +38,10 @@ public class S3FileService implements FileService {
 
     @Override
     public void deleteFileByUrl(String fileUrl) {
-        String fileName = getFileNameFromUrl(fileUrl);
-        s3Client.deleteObject(new DeleteObjectRequest(bucketName, fileName));
+        if (fileUrl != null && !fileUrl.isBlank()){
+            String fileName = getFileNameFromUrl(fileUrl);
+            s3Client.deleteObject(new DeleteObjectRequest(bucketName, fileName));
+        }
     }
 
     private String getFileNameFromUrl(String fileUrl) {
