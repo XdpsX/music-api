@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Setter
 @Getter
 @Entity
@@ -18,4 +20,8 @@ public class Genre {
 
     @Column(nullable = false)
     private String image;
+
+    @OneToMany(mappedBy = "genre")
+    private List<Album> albums;
+
 }

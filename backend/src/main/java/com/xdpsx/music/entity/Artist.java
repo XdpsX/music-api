@@ -1,19 +1,19 @@
 package com.xdpsx.music.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Setter
 @Getter
 @ToString
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @Entity
 @Table(name = "artists")
@@ -42,4 +42,8 @@ public class Artist {
             updatable = false
     )
     private LocalDateTime createdAt;
+
+    @ManyToMany(mappedBy = "artists")
+    private List<Album> albums;
+
 }
