@@ -35,8 +35,11 @@ public class ArtistCriteriaRepositoryImpl implements ArtistCriteriaRepository {
         }
         query.where(predicates.toArray(new Predicate[0]));
 
-        Order order = getSortOrder(sort, cb, root);
-        query.orderBy(order);
+        if (sort != null){
+            Order order = getSortOrder(sort, cb, root);
+            query.orderBy(order);
+        }
+
         TypedQuery<Artist> typedQuery = entityManager.createQuery(query);
         int totalRows = typedQuery.getResultList().size();
         typedQuery.setFirstResult((int) pageable.getOffset());
