@@ -12,6 +12,7 @@ import com.xdpsx.music.repository.ArtistRepository;
 import com.xdpsx.music.repository.GenreRepository;
 import com.xdpsx.music.service.AlbumService;
 import com.xdpsx.music.service.FileService;
+import com.xdpsx.music.util.Compare;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.xdpsx.music.constant.FileContants.ALBUMS_IMG_FOLDER;
+import static com.xdpsx.music.constant.FileConstants.ALBUMS_IMG_FOLDER;
 
 @Service
 @RequiredArgsConstructor
@@ -87,7 +88,7 @@ public class AlbumServiceImpl implements AlbumService {
         }
 
         // Artist
-        if (!isSameArtists(album.getArtists(), request.getArtistIds())){
+        if (!Compare.isSameArtists(album.getArtists(), request.getArtistIds())){
             List<Artist> newArtists = new ArrayList<>();
             for (Long artistId: request.getArtistIds()) {
                 Artist artist = artistRepository.findById(artistId)
@@ -104,17 +105,6 @@ public class AlbumServiceImpl implements AlbumService {
             fileService.deleteFileByUrl(oldImage);
         }
         return albumMapper.fromEntityToResponse(updatedAlbum);
-    }
-
-    private boolean isSameArtists(List<Artist> artistList, List<Long> ids){
-        boolean areEqual = true;
-        for (Artist artist : artistList) {
-            if (!ids.contains(artist.getId())) {
-                areEqual = false;
-                break;
-            }
-        }
-        return areEqual;
     }
 
     @Override

@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.xdpsx.music.constant.FileContants.ARTISTS_IMG_FOLDER;
+import static com.xdpsx.music.constant.FileConstants.ARTISTS_IMG_FOLDER;
 
 @Service
 @RequiredArgsConstructor

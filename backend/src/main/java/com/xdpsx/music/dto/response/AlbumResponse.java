@@ -1,7 +1,5 @@
 package com.xdpsx.music.dto.response;
 
-import com.xdpsx.music.entity.Artist;
-import com.xdpsx.music.entity.Genre;
 import lombok.Builder;
 import lombok.Data;
 

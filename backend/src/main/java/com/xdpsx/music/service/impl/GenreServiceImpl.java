@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.xdpsx.music.constant.FileContants.GENRES_IMG_FOLDER;
+import static com.xdpsx.music.constant.FileConstants.GENRES_IMG_FOLDER;
 
 @Service
 @RequiredArgsConstructor
