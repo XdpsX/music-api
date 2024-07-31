@@ -1,0 +1,63 @@
+package com.xdpsx.music.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Setter
+@Getter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "tracks")
+@EntityListeners(AuditingEntityListener.class)
+public class Track {
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @Column(length = 128, nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private Integer durationMs;
+
+    private String image;
+
+    @Column(nullable = false)
+    private String url;
+
+    @CreatedDate
+    @Column(
+            nullable = false,
+            updatable = false
+    )
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false, unique = true)
+    private Integer trackNumber;
+
+    @ManyToOne
+    @JoinColumn(name="album_id", referencedColumnName = "id")
+    private Album album;
+
+    @ManyToOne
+    @JoinColumn(name="genre_id", referencedColumnName = "id")
+    private Genre genre;
+
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "artist_tracks",
+            joinColumns = @JoinColumn(name = "track_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "artist_id", referencedColumnName = "id")
+    )
+    private List<Artist> artists;
+
+}

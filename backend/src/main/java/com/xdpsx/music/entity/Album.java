@@ -40,6 +40,9 @@ public class Album {
     )
     private List<Artist> artists;
 
+    @OneToMany(mappedBy = "album")
+    private List<Track> tracks;
+
     public void updateAlbum(AlbumRequest request){
         this.setName(request.getName());
         this.setReleaseDate(request.getReleaseDate());
