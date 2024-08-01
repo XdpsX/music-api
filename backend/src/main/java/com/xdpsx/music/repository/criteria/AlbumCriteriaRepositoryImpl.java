@@ -24,6 +24,16 @@ public class AlbumCriteriaRepositoryImpl implements AlbumCriteriaRepository {
     }
 
     @Override
+    public Page<Album> findAlbumsWithGenreFilters(Pageable pageable, String name, String sortField, Integer genreId) {
+        return findAlbumsWithFilters(pageable, name, sortField, null, genreId);
+    }
+
+    @Override
+    public Page<Album> findAlbumsWithArtistFilters(Pageable pageable, String name, String sortField, Long artistId) {
+        return findAlbumsWithFilters(pageable, name, sortField, artistId, null);
+    }
+
+    @Override
     public Page<Album> findAlbumsWithFilters(Pageable pageable, String name, String sortField, Long artistId, Integer genreId) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 

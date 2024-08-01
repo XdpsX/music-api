@@ -1,7 +1,11 @@
 package com.xdpsx.music.controller;
 
+import com.xdpsx.music.dto.common.PageResponse;
+import com.xdpsx.music.dto.request.AlbumParams;
 import com.xdpsx.music.dto.request.GenreRequest;
+import com.xdpsx.music.dto.response.AlbumResponse;
 import com.xdpsx.music.dto.response.GenreResponse;
+import com.xdpsx.music.service.AlbumService;
 import com.xdpsx.music.service.GenreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GenreController {
     private final GenreService genreService;
+    private final AlbumService albumService;
 
     @PostMapping("/create")
     public ResponseEntity<GenreResponse> createGenre(
@@ -37,5 +42,14 @@ public class GenreController {
     public ResponseEntity<Void> deleteGenre(@PathVariable Integer genreId){
         genreService.deleteGenre(genreId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{genreId}/albums")
+    public ResponseEntity<PageResponse<AlbumResponse>> getAlbumsByGenre(
+            @PathVariable Integer genreId,
+            @Valid AlbumParams params
+    ){
+        PageResponse<AlbumResponse> responses = albumService.getAlbumsByGenreId(genreId, params);
+        return ResponseEntity.ok(responses);
     }
 }

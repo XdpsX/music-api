@@ -12,4 +12,7 @@ public interface AlbumService {
     AlbumResponse getAlbumById(Long id);
     PageResponse<AlbumResponse> getAllAlbums(AlbumParams params);
     void deleteAlbum(Long id);
+
+    PageResponse<AlbumResponse> getAlbumsByGenreId(Integer genreId, AlbumParams params);
+    PageResponse<AlbumResponse> getAlbumsByArtistId(Long artistId, AlbumParams params);
 }

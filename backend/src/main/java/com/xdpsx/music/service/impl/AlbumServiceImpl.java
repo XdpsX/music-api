@@ -130,13 +130,7 @@ public class AlbumServiceImpl implements AlbumService {
         List<AlbumResponse> responses = albumPage.getContent().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return PageResponse.<AlbumResponse>builder()
-                .items(responses)
-                .pageNum(albumPage.getNumber() + 1)
-                .pageSize(albumPage.getSize())
-                .totalItems(albumPage.getTotalElements())
-                .totalPages(albumPage.getTotalPages())
-                .build();
+        return buildPageResponse(albumPage, responses);
     }
 
     @Override
@@ -147,10 +141,50 @@ public class AlbumServiceImpl implements AlbumService {
         albumRepository.delete(album);
     }
 
+    @Override
+    public PageResponse<AlbumResponse> getAlbumsByGenreId(Integer genreId, AlbumParams params) {
+        Genre genre = genreRepository.findById(genreId)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found genre with ID=%s", genreId)));
+
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Album> albumPage = albumRepository.findAlbumsWithGenreFilters(
+                pageable, params.getSearch(), params.getSort(), genre.getId()
+        );
+        List<AlbumResponse> responses = albumPage.getContent().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+        return buildPageResponse(albumPage, responses);
+    }
+
+    @Override
+    public PageResponse<AlbumResponse> getAlbumsByArtistId(Long artistId, AlbumParams params) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Album> albumPage = albumRepository.findAlbumsWithArtistFilters(
+                pageable, params.getSearch(), params.getSort(), artist.getId()
+        );
+        List<AlbumResponse> responses = albumPage.getContent().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+        return buildPageResponse(albumPage, responses);
+    }
+
     private AlbumResponse mapToResponse(Album album){
         AlbumResponse response = albumMapper.fromEntityToResponse(album);
         int totalTracks = trackRepository.countByAlbumId(album.getId());
         response.setTotalTracks(totalTracks);
         return response;
+    }
+
+    private static PageResponse<AlbumResponse> buildPageResponse(
+            Page<Album> albumPage, List<AlbumResponse> responses) {
+        return PageResponse.<AlbumResponse>builder()
+                .items(responses)
+                .pageNum(albumPage.getNumber() + 1)
+                .pageSize(albumPage.getSize())
+                .totalItems(albumPage.getTotalElements())
+                .totalPages(albumPage.getTotalPages())
+                .build();
     }
 }
