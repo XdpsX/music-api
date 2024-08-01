@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.xdpsx.music.constant.PageConstants.*;
+
 @Repository
 public class ArtistCriteriaRepositoryImpl implements ArtistCriteriaRepository {
     @PersistenceContext
@@ -78,7 +80,7 @@ public class ArtistCriteriaRepositoryImpl implements ArtistCriteriaRepository {
             actualField = sortField.substring(1);
         }
 
-        if (actualField.equalsIgnoreCase("name")) {
+        if (actualField.equalsIgnoreCase(NAME_FIELD)) {
             return sortField.startsWith("-") ? cb.desc(root.get(actualField)) : cb.asc(root.get(actualField));
         }else {
             Expression<LocalDateTime> expression = root.get("createdAt");

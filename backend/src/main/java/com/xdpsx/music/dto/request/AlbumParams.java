@@ -5,13 +5,13 @@ import com.xdpsx.music.validator.SortFieldConstraint;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import static com.xdpsx.music.constant.PageConstants.DEFAULT_SORT_FIELD;
+import static com.xdpsx.music.constant.PageConstants.*;
 
 @Data
 @NoArgsConstructor
 public class AlbumParams extends PageParams {
     private String search;
 
-    @SortFieldConstraint(sortFields = {"date", "name", "numTracks"})
+    @SortFieldConstraint(sortFields = {DATE_FIELD, NAME_FIELD, NUM_TRACKS_FIELD})
     private String sort = DEFAULT_SORT_FIELD;
 }

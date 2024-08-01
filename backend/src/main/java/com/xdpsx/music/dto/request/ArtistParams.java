@@ -6,7 +6,7 @@ import com.xdpsx.music.validator.SortFieldConstraint;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import static com.xdpsx.music.constant.PageConstants.DEFAULT_SORT_FIELD;
+import static com.xdpsx.music.constant.PageConstants.*;
 
 
 @Data
@@ -14,7 +14,7 @@ import static com.xdpsx.music.constant.PageConstants.DEFAULT_SORT_FIELD;
 public class ArtistParams extends PageParams {
     private String search;
 
-    @SortFieldConstraint(sortFields = {"date", "name"})
+    @SortFieldConstraint(sortFields = {DATE_FIELD, NAME_FIELD})
     private String sort = DEFAULT_SORT_FIELD;
 
     private Gender gender;

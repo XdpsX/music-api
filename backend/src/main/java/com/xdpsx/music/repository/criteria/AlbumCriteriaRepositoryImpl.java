@@ -1,7 +1,6 @@
 package com.xdpsx.music.repository.criteria;
 
 import com.xdpsx.music.entity.Album;
-import com.xdpsx.music.entity.Track;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.*;
@@ -11,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+
+import static com.xdpsx.music.constant.PageConstants.*;
 
 @Repository
 public class AlbumCriteriaRepositoryImpl implements AlbumCriteriaRepository {
@@ -88,18 +89,18 @@ public class AlbumCriteriaRepositoryImpl implements AlbumCriteriaRepository {
             String field = desc ? sortField.substring(1) : sortField;
 
             switch (field) {
-                case "numTracks": {
+                case NUM_TRACKS_FIELD: {
                     Join<Album, Object> tracks = album.join("tracks", JoinType.LEFT);
                     cq.groupBy(album.get("id"));
                     cq.orderBy(desc ? cb.desc(cb.count(tracks)) : cb.asc(cb.count(tracks)));
                     break;
                 }
-                case "date": {
+                case DATE_FIELD: {
                     Path<?> path = album.get("releaseDate");
                     cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
                     break;
                 }
-                case "name": {
+                case NAME_FIELD: {
                     Path<?> path = album.get("name");
                     cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
                     break;
