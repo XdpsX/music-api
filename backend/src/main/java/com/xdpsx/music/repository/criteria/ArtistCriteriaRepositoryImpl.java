@@ -4,7 +4,6 @@ import com.xdpsx.music.entity.Artist;
 import com.xdpsx.music.entity.Gender;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -26,27 +25,51 @@ public class ArtistCriteriaRepositoryImpl implements ArtistCriteriaRepository {
         CriteriaQuery<Artist> query = cb.createQuery(Artist.class);
         Root<Artist> root = query.from(Artist.class);
 
+        // Predicates for filters
+        List<Predicate> predicates = buildPredicates(cb, root, name, gender);
+        query.where(predicates.toArray(new Predicate[0]));
+
+        // Sorting
+        if (sort != null) {
+            query.orderBy(getSortOrder(sort, cb, root));
+        }
+
+        // Execute main query
+        List<Artist> artists = entityManager.createQuery(query)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        // Create a new count query
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Artist> countRoot = countQuery.from(Artist.class); // New Root for count query
+
+        // Predicates for the count query
+        List<Predicate> countPredicates =  buildPredicates(cb, countRoot, name, gender);
+        countQuery.select(cb.count(countRoot)).where(countPredicates.toArray(new Predicate[0]));
+
+        // Execute the count query
+        Long totalRows = entityManager.createQuery(countQuery).getSingleResult();
+
+        return new PageImpl<>(artists, pageable, totalRows);
+    }
+
+    private List<Predicate> buildPredicates(CriteriaBuilder cb, Root<Artist> root, String name, Gender gender) {
         List<Predicate> predicates = new ArrayList<>();
         if (name != null && !name.isEmpty()) {
             predicates.add(cb.like(root.get("name"), "%" + name + "%"));
         }
-        if (gender != null){
+        if (gender != null) {
             predicates.add(cb.equal(root.get("gender"), gender.name()));
         }
-        query.where(predicates.toArray(new Predicate[0]));
+        return predicates;
+    }
 
-        if (sort != null){
-            Order order = getSortOrder(sort, cb, root);
-            query.orderBy(order);
-        }
-
-        TypedQuery<Artist> typedQuery = entityManager.createQuery(query);
-        int totalRows = typedQuery.getResultList().size();
-        typedQuery.setFirstResult((int) pageable.getOffset());
-        typedQuery.setMaxResults(pageable.getPageSize());
-
-        List<Artist> artists = typedQuery.getResultList();
-        return new PageImpl<>(artists, pageable, totalRows);
+    private Long countArtists(CriteriaBuilder cb, List<Predicate> predicates) {
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Artist> countRoot = countQuery.from(Artist.class);
+        countQuery.select(cb.count(countRoot)).where(predicates.toArray(new Predicate[0]));
+        return entityManager.createQuery(countQuery).getSingleResult();
     }
 
     private Order getSortOrder(String sortField, CriteriaBuilder cb, Root root) {

@@ -3,8 +3,9 @@ package com.xdpsx.music.repository.criteria;
 import com.xdpsx.music.entity.Artist;
 import com.xdpsx.music.entity.Gender;
 import com.xdpsx.music.repository.ArtistRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
@@ -17,11 +18,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ArtistCriteriaRepositoryImplTest {
     @Autowired
     private ArtistRepository artistRepository;
 
-    @BeforeEach
+    @BeforeAll
     void setUp() {
         Artist artist1 = Artist.builder()
                 .name("Smile John")
