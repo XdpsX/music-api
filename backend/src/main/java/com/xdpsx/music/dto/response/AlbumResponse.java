@@ -13,6 +13,7 @@ public class AlbumResponse {
     private String name;
     private String image;
     private LocalDate releaseDate;
+    private int totalTracks;
     private GenreResponse genre;
     private List<ArtistResponse> artists;
 }

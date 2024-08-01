@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 public interface AlbumMapper {
     Album fromRequestToEntity(AlbumRequest request);
 
+//    @Mapping(target = "totalTracks", expression = "java(entity.getTracks().size())")
     @Mapping(target = "genre", source = "entity.genre")
     @Mapping(target = "artists", source = "entity.artists")
     AlbumResponse fromEntityToResponse(Album entity);

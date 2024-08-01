@@ -1,5 +1,7 @@
 package com.xdpsx.music.controller;
 
+import com.xdpsx.music.dto.common.PageResponse;
+import com.xdpsx.music.dto.request.AlbumParams;
 import com.xdpsx.music.dto.request.AlbumRequest;
 import com.xdpsx.music.dto.response.AlbumResponse;
 import com.xdpsx.music.service.AlbumService;
@@ -9,8 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/albums")
@@ -22,7 +22,7 @@ public class AlbumController {
     public ResponseEntity<AlbumResponse> createAlbum(
             @Valid @ModelAttribute AlbumRequest request,
             @RequestParam(required = false) MultipartFile image
-            ) {
+    ) {
         AlbumResponse response = albumService.createAlbum(request, image);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -50,8 +50,10 @@ public class AlbumController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AlbumResponse>> getAllAlbums() {
-        List<AlbumResponse> albums = albumService.getAllAlbums();
-        return ResponseEntity.ok(albums);
+    public ResponseEntity<PageResponse<AlbumResponse>> getAllAlbums(
+            @Valid AlbumParams params
+    ) {
+        PageResponse<AlbumResponse> responses = albumService.getAllAlbums(params);
+        return ResponseEntity.ok(responses);
     }
 }

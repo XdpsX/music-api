@@ -1,5 +1,7 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.dto.common.PageResponse;
+import com.xdpsx.music.dto.request.AlbumParams;
 import com.xdpsx.music.dto.request.AlbumRequest;
 import com.xdpsx.music.dto.response.AlbumResponse;
 import com.xdpsx.music.entity.Album;
@@ -10,10 +12,14 @@ import com.xdpsx.music.mapper.AlbumMapper;
 import com.xdpsx.music.repository.AlbumRepository;
 import com.xdpsx.music.repository.ArtistRepository;
 import com.xdpsx.music.repository.GenreRepository;
+import com.xdpsx.music.repository.TrackRepository;
 import com.xdpsx.music.service.AlbumService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.util.Compare;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +37,7 @@ public class AlbumServiceImpl implements AlbumService {
     private final AlbumRepository albumRepository;
     private final GenreRepository genreRepository;
     private final ArtistRepository artistRepository;
+    private final TrackRepository trackRepository;
 
     @Override
     public AlbumResponse createAlbum(AlbumRequest request, MultipartFile image) {
@@ -104,21 +111,32 @@ public class AlbumServiceImpl implements AlbumService {
         if (oldImage != null){
             fileService.deleteFileByUrl(oldImage);
         }
-        return albumMapper.fromEntityToResponse(updatedAlbum);
+        return this.mapToResponse(updatedAlbum);
     }
 
     @Override
     public AlbumResponse getAlbumById(Long id) {
         Album album = albumRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", id)));
-        return albumMapper.fromEntityToResponse(album);
+        return this.mapToResponse(album);
     }
 
     @Override
-    public List<AlbumResponse> getAllAlbums() {
-        return albumRepository.findAll().stream()
-                .map(albumMapper::fromEntityToResponse)
+    public PageResponse<AlbumResponse> getAllAlbums(AlbumParams params) {
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Album> albumPage = albumRepository.findAlbumsWithFilters(
+                pageable, params.getSearch(), params.getSort()
+        );
+        List<AlbumResponse> responses = albumPage.getContent().stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
+        return PageResponse.<AlbumResponse>builder()
+                .items(responses)
+                .pageNum(albumPage.getNumber() + 1)
+                .pageSize(albumPage.getSize())
+                .totalItems(albumPage.getTotalElements())
+                .totalPages(albumPage.getTotalPages())
+                .build();
     }
 
     @Override
@@ -127,5 +145,12 @@ public class AlbumServiceImpl implements AlbumService {
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", id)));
         fileService.deleteFileByUrl(album.getImage());
         albumRepository.delete(album);
+    }
+
+    private AlbumResponse mapToResponse(Album album){
+        AlbumResponse response = albumMapper.fromEntityToResponse(album);
+        int totalTracks = trackRepository.countByAlbumId(album.getId());
+        response.setTotalTracks(totalTracks);
+        return response;
     }
 }
