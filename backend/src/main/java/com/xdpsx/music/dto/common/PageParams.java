@@ -15,7 +15,4 @@ public class PageParams {
     @Max(value = MAX_ITEMS_PER_PAGE, message = "Page size can not be greater than " + MAX_ITEMS_PER_PAGE)
     private Integer pageSize = MIN_ITEMS_PER_PAGE;
 
-    private String search;
-
-    private String sort = DEFAULT_SORT_FIELD;
 }
