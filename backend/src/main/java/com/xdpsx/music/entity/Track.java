@@ -40,7 +40,7 @@ public class Track {
     )
     private LocalDateTime createdAt;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private Integer trackNumber;
 
     @ManyToOne
