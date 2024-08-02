@@ -3,10 +3,13 @@ package com.xdpsx.music.controller;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.params.AlbumParams;
 import com.xdpsx.music.dto.request.GenreRequest;
+import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.AlbumResponse;
 import com.xdpsx.music.dto.response.GenreResponse;
+import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.service.AlbumService;
 import com.xdpsx.music.service.GenreService;
+import com.xdpsx.music.service.TrackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,7 @@ import java.util.List;
 public class GenreController {
     private final GenreService genreService;
     private final AlbumService albumService;
+    private final TrackService trackService;
 
     @PostMapping("/create")
     public ResponseEntity<GenreResponse> createGenre(
@@ -50,6 +54,15 @@ public class GenreController {
             @Valid AlbumParams params
     ){
         PageResponse<AlbumResponse> responses = albumService.getAlbumsByGenreId(genreId, params);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{genreId}/tracks")
+    public ResponseEntity<PageResponse<TrackResponse>> getTracksByGenre(
+            @PathVariable Integer genreId,
+            @Valid TrackParams params
+    ){
+        PageResponse<TrackResponse> responses = trackService.getTracksByGenreId(genreId, params);
         return ResponseEntity.ok(responses);
     }
 }

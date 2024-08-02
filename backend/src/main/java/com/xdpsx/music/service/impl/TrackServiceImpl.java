@@ -90,10 +90,13 @@ public class TrackServiceImpl implements TrackService {
         if (isUpdateAlbumInTrack(trackToUpdate, request.getAlbumId())){
             Album oldAlbum = trackToUpdate.getAlbum();
             Integer deletedTrackNumber = trackToUpdate.getTrackNumber();
-            Album newAlbum = albumRepository.findById(request.getAlbumId())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(String.format("Not found album with ID=%s", request.getGenreId()))
-                    );
+            Album newAlbum = null;
+            if (request.getAlbumId() != null){
+                newAlbum = albumRepository.findById(request.getAlbumId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(String.format("Not found album with ID=%s", request.getGenreId()))
+                        );
+            }
             if (oldAlbum != null){
                 // Adjust trackNumber of remaining tracks
                 List<Track> tracks = trackRepository.findByAlbumIdOrderByTrackNumberAsc(oldAlbum.getId());
@@ -104,9 +107,11 @@ public class TrackServiceImpl implements TrackService {
                 }
                 trackRepository.saveAll(tracks);
             }
-            if (request.getAlbumId() != null){
+            if (newAlbum != null){
                 int trackNumber = trackRepository.countByAlbumId(newAlbum.getId());
                 trackToUpdate.setTrackNumber(trackNumber+1);
+            }else {
+                trackToUpdate.setTrackNumber(null);
             }
             trackToUpdate.setAlbum(newAlbum);
         }
@@ -218,5 +223,46 @@ public class TrackServiceImpl implements TrackService {
         // Delete image and file
         fileService.deleteFileByUrl(imageToDelete);
         fileService.deleteFileByUrl(urlToDelete);
+    }
+
+    @Override
+    public PageResponse<TrackResponse> getTracksByGenreId(Integer genreId, TrackParams params) {
+        Genre genre = genreRepository.findById(genreId)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found genre with ID=%s", genreId)));
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Track> trackPage = trackRepository.findWithGenreFilters(
+                pageable, params.getSearch(), params.getSort(), genre.getId()
+        );
+        List<TrackResponse> responses = trackPage.getContent().stream()
+                .map(trackMapper::fromEntityToResponse)
+                .collect(Collectors.toList());
+        return PageResponse.<TrackResponse>builder()
+                .items(responses)
+                .pageNum(trackPage.getNumber() + 1)
+                .pageSize(trackPage.getSize())
+                .totalItems(trackPage.getTotalElements())
+                .totalPages(trackPage.getTotalPages())
+                .build();
+    }
+
+    @Override
+    public PageResponse<TrackResponse> getTracksByArtistId(Long artistId, TrackParams params) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
+
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Track> trackPage = trackRepository.findWithArtistFilters(
+                pageable, params.getSearch(), params.getSort(), artist.getId()
+        );
+        List<TrackResponse> responses = trackPage.getContent().stream()
+                .map(trackMapper::fromEntityToResponse)
+                .collect(Collectors.toList());
+        return PageResponse.<TrackResponse>builder()
+                .items(responses)
+                .pageNum(trackPage.getNumber() + 1)
+                .pageSize(trackPage.getSize())
+                .totalItems(trackPage.getTotalElements())
+                .totalPages(trackPage.getTotalPages())
+                .build();
     }
 }

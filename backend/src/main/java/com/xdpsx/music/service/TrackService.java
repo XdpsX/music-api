@@ -12,4 +12,7 @@ public interface TrackService {
     TrackResponse getTrackById(Long id);
     PageResponse<TrackResponse> getAllTracks(TrackParams params);
     void deleteTrack(Long id);
+
+    PageResponse<TrackResponse> getTracksByGenreId(Integer genreId, TrackParams params);
+    PageResponse<TrackResponse> getTracksByArtistId(Long artistId, TrackParams params);
 }
