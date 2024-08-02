@@ -73,6 +73,7 @@ public class TrackServiceImpl implements TrackService {
         // File
         String fileUrl = fileService.uploadFile(file, TRACKS_FILE_FOLDER);
         track.setUrl(fileUrl);
+//        track.setUrl(request.getName());
 
         Track savedTrack = trackRepository.save(track);
         return trackMapper.fromEntityToResponse(savedTrack);
@@ -93,7 +94,6 @@ public class TrackServiceImpl implements TrackService {
                     .orElseThrow(() ->
                             new ResourceNotFoundException(String.format("Not found album with ID=%s", request.getGenreId()))
                     );
-            trackToUpdate.setAlbum(newAlbum);
             if (oldAlbum != null){
                 // Adjust trackNumber of remaining tracks
                 List<Track> tracks = trackRepository.findByAlbumIdOrderByTrackNumberAsc(oldAlbum.getId());
@@ -108,6 +108,7 @@ public class TrackServiceImpl implements TrackService {
                 int trackNumber = trackRepository.countByAlbumId(newAlbum.getId());
                 trackToUpdate.setTrackNumber(trackNumber+1);
             }
+            trackToUpdate.setAlbum(newAlbum);
         }
 
         // Genre
