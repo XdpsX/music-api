@@ -71,9 +71,9 @@ public class TrackServiceImpl implements TrackService {
             track.setImage(imageUrl);
         }
         // File
-        String fileUrl = fileService.uploadFile(file, TRACKS_FILE_FOLDER);
-        track.setUrl(fileUrl);
-//        track.setUrl(request.getName());
+//        String fileUrl = fileService.uploadFile(file, TRACKS_FILE_FOLDER);
+//        track.setUrl(fileUrl);
+        track.setUrl(request.getName());
 
         Track savedTrack = trackRepository.save(track);
         return trackMapper.fromEntityToResponse(savedTrack);
@@ -253,6 +253,26 @@ public class TrackServiceImpl implements TrackService {
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findWithArtistFilters(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
+        );
+        List<TrackResponse> responses = trackPage.getContent().stream()
+                .map(trackMapper::fromEntityToResponse)
+                .collect(Collectors.toList());
+        return PageResponse.<TrackResponse>builder()
+                .items(responses)
+                .pageNum(trackPage.getNumber() + 1)
+                .pageSize(trackPage.getSize())
+                .totalItems(trackPage.getTotalElements())
+                .totalPages(trackPage.getTotalPages())
+                .build();
+    }
+
+    @Override
+    public PageResponse<TrackResponse> getTracksByAlbumId(Long albumId, TrackParams params) {
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", albumId)));
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Track> trackPage = trackRepository.findWithAlbumFilters(
+                pageable, params.getSearch(), params.getSort(), album.getId()
         );
         List<TrackResponse> responses = trackPage.getContent().stream()
                 .map(trackMapper::fromEntityToResponse)

@@ -15,4 +15,5 @@ public interface TrackService {
 
     PageResponse<TrackResponse> getTracksByGenreId(Integer genreId, TrackParams params);
     PageResponse<TrackResponse> getTracksByArtistId(Long artistId, TrackParams params);
+    PageResponse<TrackResponse> getTracksByAlbumId(Long albumId, TrackParams params);
 }

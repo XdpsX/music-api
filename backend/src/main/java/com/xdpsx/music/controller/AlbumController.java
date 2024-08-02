@@ -3,8 +3,11 @@ package com.xdpsx.music.controller;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.params.AlbumParams;
 import com.xdpsx.music.dto.request.AlbumRequest;
+import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.AlbumResponse;
+import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.service.AlbumService;
+import com.xdpsx.music.service.TrackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class AlbumController {
     private final AlbumService albumService;
+    private final TrackService trackService;
 
     @PostMapping
     public ResponseEntity<AlbumResponse> createAlbum(
@@ -55,5 +59,14 @@ public class AlbumController {
     ) {
         PageResponse<AlbumResponse> responses = albumService.getAllAlbums(params);
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{albumId}/tracks")
+    public ResponseEntity<PageResponse<TrackResponse>> getTracksByAlbum(
+            @PathVariable Long albumId,
+            @Valid TrackParams params
+    ) {
+        PageResponse<TrackResponse> response = trackService.getTracksByAlbumId(albumId, params);
+        return ResponseEntity.ok(response);
     }
 }

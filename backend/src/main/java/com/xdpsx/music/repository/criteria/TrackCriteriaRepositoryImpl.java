@@ -19,31 +19,30 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
     private EntityManager entityManager;
 
     @Override
-    public Page<Track> findWithFilters(Pageable pageable, String name, String sort){
-        return findAllWithFilters(pageable, name, sort, null, null, null, false);
+    public Page<Track> findWithFilters(Pageable pageable, String name, String sort) {
+        return findTracks(pageable, name, null, null, null, sort, false);
     }
 
-    public Page<Track> findWithAlbumFilters(Pageable pageable, String name, String sort, Long albumId){
-        return findAllWithFilters(pageable, name, sort, albumId,null, null, true);
+    public Page<Track> findWithAlbumFilters(Pageable pageable, String name, String sort, Long albumId) {
+        return findTracksWithAlbumSorting(pageable, name, albumId, sort);
     }
 
-    public Page<Track> findWithGenreFilters(Pageable pageable, String name, String sort, Integer genreId){
-        return findAllWithFilters(pageable, name, sort,null, genreId, null, true);
+    public Page<Track> findWithGenreFilters(Pageable pageable, String name, String sort, Integer genreId) {
+        return findTracks(pageable, name, null, genreId, null, sort, true);
     }
 
-    public Page<Track> findWithArtistFilters(Pageable pageable, String name, String sort, Long artistId){
-        return findAllWithFilters(pageable, name, sort,null, null, artistId, true);
+    public Page<Track> findWithArtistFilters(Pageable pageable, String name, String sort, Long artistId) {
+        return findTracks(pageable, name, null, null, artistId, sort, true);
     }
 
-    private Page<Track> findAllWithFilters(Pageable pageable, String name, String sort,
-                                       Long albumId, Integer genreId, Long artistId, boolean withAlbum) {
+    private Page<Track> findTracks(Pageable pageable, String name, Long albumId, Integer genreId, Long artistId, String sort, boolean withAlbum) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Track> cq = cb.createQuery(Track.class);
         Root<Track> track = cq.from(Track.class);
 
         Predicate filtersPredicate = createFiltersPredicate(cb, track, name, albumId, genreId, artistId, withAlbum);
         cq.where(filtersPredicate);
-        applySorting(cb, cq, track, sort);
+        applyBasicSorting(cb, cq, track, sort);
 
         List<Track> tracks = entityManager.createQuery(cq)
                 .setFirstResult((int) pageable.getOffset())
@@ -55,19 +54,33 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
         return new PageImpl<>(tracks, pageable, total);
     }
 
-    private Predicate createFiltersPredicate(CriteriaBuilder cb, Root<Track> track, String name,
-                                             Long albumId, Integer genreId, Long artistId, boolean withAlbum) {
+    private Page<Track> findTracksWithAlbumSorting(Pageable pageable, String name, Long albumId, String sort) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Track> cq = cb.createQuery(Track.class);
+        Root<Track> track = cq.from(Track.class);
+
+        Predicate filtersPredicate = createFiltersPredicate(cb, track, name, albumId, null, null, true);
+        cq.where(filtersPredicate);
+        applyAlbumSorting(cb, cq, track, sort);
+
+        List<Track> tracks = entityManager.createQuery(cq)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        long total = getTotalCount(cb, name, albumId, null, null, true);
+
+        return new PageImpl<>(tracks, pageable, total);
+    }
+
+    private Predicate createFiltersPredicate(CriteriaBuilder cb, Root<Track> track, String name, Long albumId, Integer genreId, Long artistId, boolean withAlbum) {
         Predicate predicate = cb.conjunction();
 
         if (name != null && !name.isEmpty()) {
             predicate = cb.and(predicate, cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%"));
         }
-        if (withAlbum){
-            if (albumId == null) {
-                predicate = cb.and(cb.isNull(track.get("album")));
-            } else {
-                predicate = cb.and(predicate, cb.equal(track.get("album").get("id"), albumId));
-            }
+        if (withAlbum) {
+            predicate = cb.and(predicate, albumId == null ? cb.isNull(track.get("album")) : cb.equal(track.get("album").get("id"), albumId));
         }
         if (genreId != null) {
             predicate = cb.and(predicate, cb.equal(track.get("genre").get("id"), genreId));
@@ -79,24 +92,36 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
         return predicate;
     }
 
-    private void applySorting(CriteriaBuilder cb, CriteriaQuery<Track> cq, Root<Track> track, String sortField) {
+    private void applyBasicSorting(CriteriaBuilder cb, CriteriaQuery<Track> cq, Root<Track> track, String sortField) {
         if (sortField != null && !sortField.isEmpty()) {
             boolean desc = sortField.startsWith("-");
             String field = desc ? sortField.substring(1) : sortField;
 
-            switch (field) {
-                case DATE_FIELD: {
-                    Path<?> path = track.get("createdAt");
-                    cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
-                    break;
-                }
-                case NAME_FIELD: {
-                    Path<?> path = track.get("name");
-                    cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
-                    break;
-                }
-                default:
-                    break;
+            Path<?> path = switch (field) {
+                case DATE_FIELD -> track.get("createdAt");
+                case NAME_FIELD -> track.get("name");
+                default -> null;
+            };
+
+            if (path != null) {
+                cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
+            }
+        }
+    }
+
+    private void applyAlbumSorting(CriteriaBuilder cb, CriteriaQuery<Track> cq, Root<Track> track, String sortField) {
+        if (sortField != null && !sortField.isEmpty()) {
+            boolean desc = sortField.startsWith("-");
+            String field = desc ? sortField.substring(1) : sortField;
+
+            Path<?> path = switch (field) {
+                case DATE_FIELD -> track.get("trackNumber");
+                case NAME_FIELD -> track.get("name");
+                default -> null;
+            };
+
+            if (path != null) {
+                cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
             }
         }
     }
@@ -110,5 +135,4 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
 
         return entityManager.createQuery(countQuery).getSingleResult();
     }
-
 }
