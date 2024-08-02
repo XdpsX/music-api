@@ -1,4 +1,4 @@
-package com.xdpsx.music.dto.request;
+package com.xdpsx.music.dto.request.params;
 
 import com.xdpsx.music.dto.common.PageParams;
 import com.xdpsx.music.validator.SortFieldConstraint;

@@ -1,7 +1,7 @@
 package com.xdpsx.music.service.impl;
 
 import com.xdpsx.music.dto.common.PageResponse;
-import com.xdpsx.music.dto.request.ArtistParams;
+import com.xdpsx.music.dto.request.params.ArtistParams;
 import com.xdpsx.music.dto.request.ArtistRequest;
 import com.xdpsx.music.dto.response.ArtistResponse;
 import com.xdpsx.music.entity.Artist;

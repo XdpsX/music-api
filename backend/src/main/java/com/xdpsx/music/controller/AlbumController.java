@@ -1,7 +1,7 @@
 package com.xdpsx.music.controller;
 
 import com.xdpsx.music.dto.common.PageResponse;
-import com.xdpsx.music.dto.request.AlbumParams;
+import com.xdpsx.music.dto.request.params.AlbumParams;
 import com.xdpsx.music.dto.request.AlbumRequest;
 import com.xdpsx.music.dto.response.AlbumResponse;
 import com.xdpsx.music.service.AlbumService;
