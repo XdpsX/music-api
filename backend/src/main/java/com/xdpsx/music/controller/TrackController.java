@@ -1,6 +1,8 @@
 package com.xdpsx.music.controller;
 
+import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
+import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.service.TrackService;
 import jakarta.validation.Valid;
@@ -9,8 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/tracks")
@@ -46,8 +46,10 @@ public class TrackController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TrackResponse>> getAllTracks() {
-        List<TrackResponse> responses = trackService.getAllTracks();
+    public ResponseEntity<PageResponse<TrackResponse>> getAllTracks(
+            @Valid TrackParams params
+    ) {
+        PageResponse<TrackResponse> responses = trackService.getAllTracks(params);
         return ResponseEntity.ok(responses);
     }
 

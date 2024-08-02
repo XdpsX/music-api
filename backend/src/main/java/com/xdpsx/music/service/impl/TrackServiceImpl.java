@@ -1,6 +1,8 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
+import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.entity.Album;
 import com.xdpsx.music.entity.Artist;
@@ -16,6 +18,9 @@ import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.util.Compare;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,11 +42,15 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public TrackResponse createTrack(TrackRequest request, MultipartFile image, MultipartFile file) {
+        Track track = trackMapper.fromRequestToEntity(request);
+
         // Track could belong to an Album or not
         Album album = null;
         if (request.getAlbumId() != null){
             album = albumRepository.findById(request.getAlbumId())
                     .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", request.getAlbumId())));
+            int trackNumber = trackRepository.countByAlbumId(album.getId());
+            track.setTrackNumber(trackNumber+1);
         }
 
         // Get Genre and Artists
@@ -51,7 +60,7 @@ public class TrackServiceImpl implements TrackService {
                 .map(artistId -> artistRepository.findById(artistId)
                         .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId))))
                 .collect(Collectors.toList());
-        Track track = trackMapper.fromRequestToEntity(request);
+
         track.setAlbum(album);
         track.setGenre(genre);
         track.setArtists(artists);
@@ -65,13 +74,11 @@ public class TrackServiceImpl implements TrackService {
         String fileUrl = fileService.uploadFile(file, TRACKS_FILE_FOLDER);
         track.setUrl(fileUrl);
 
-        int trackNumber = trackRepository.countByAlbumId(album.getId());
-        track.setTrackNumber(trackNumber+1);
-
         Track savedTrack = trackRepository.save(track);
         return trackMapper.fromEntityToResponse(savedTrack);
     }
 
+    @Transactional
     @Override
     public TrackResponse updateTrack(Long id, TrackRequest request, MultipartFile newImage, MultipartFile newFile) {
         Track trackToUpdate= trackRepository.findById(id)
@@ -80,11 +87,27 @@ public class TrackServiceImpl implements TrackService {
 
         // Album
         if (isUpdateAlbumInTrack(trackToUpdate, request.getAlbumId())){
+            Album oldAlbum = trackToUpdate.getAlbum();
+            Integer deletedTrackNumber = trackToUpdate.getTrackNumber();
             Album newAlbum = albumRepository.findById(request.getAlbumId())
                     .orElseThrow(() ->
                             new ResourceNotFoundException(String.format("Not found album with ID=%s", request.getGenreId()))
                     );
             trackToUpdate.setAlbum(newAlbum);
+            if (oldAlbum != null){
+                // Adjust trackNumber of remaining tracks
+                List<Track> tracks = trackRepository.findByAlbumIdOrderByTrackNumberAsc(oldAlbum.getId());
+                for (Track track : tracks) {
+                    if (track.getTrackNumber() > deletedTrackNumber) {
+                        track.setTrackNumber(track.getTrackNumber() - 1);
+                    }
+                }
+                trackRepository.saveAll(tracks);
+            }
+            if (request.getAlbumId() != null){
+                int trackNumber = trackRepository.countByAlbumId(newAlbum.getId());
+                trackToUpdate.setTrackNumber(trackNumber+1);
+            }
         }
 
         // Genre
@@ -139,9 +162,7 @@ public class TrackServiceImpl implements TrackService {
         if (trackToUpdate.getAlbum() == null && albumId != null){
             return true;
         }else if (trackToUpdate.getAlbum() != null){
-            if (!trackToUpdate.getAlbum().getId().equals(albumId)){
-                return true;
-            }
+            return !trackToUpdate.getAlbum().getId().equals(albumId);
         }
         return false;
     }
@@ -154,11 +175,21 @@ public class TrackServiceImpl implements TrackService {
     }
 
     @Override
-    public List<TrackResponse> getAllTracks() {
-        return trackRepository.findAll()
-                .stream()
+    public PageResponse<TrackResponse> getAllTracks(TrackParams params) {
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Track> trackPage = trackRepository.findWithFilters(
+                pageable, params.getSearch(), params.getSort()
+        );
+        List<TrackResponse> responses = trackPage.getContent().stream()
                 .map(trackMapper::fromEntityToResponse)
                 .collect(Collectors.toList());
+        return PageResponse.<TrackResponse>builder()
+                .items(responses)
+                .pageNum(trackPage.getNumber() + 1)
+                .pageSize(trackPage.getSize())
+                .totalItems(trackPage.getTotalElements())
+                .totalPages(trackPage.getTotalPages())
+                .build();
     }
 
     @Transactional

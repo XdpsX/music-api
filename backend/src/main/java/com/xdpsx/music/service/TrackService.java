@@ -1,15 +1,15 @@
 package com.xdpsx.music.service;
 
+import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
+import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.TrackResponse;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 public interface TrackService {
     TrackResponse createTrack(TrackRequest request, MultipartFile image, MultipartFile file);
     TrackResponse updateTrack(Long id, TrackRequest request, MultipartFile newImage, MultipartFile newFile);
     TrackResponse getTrackById(Long id);
-    List<TrackResponse> getAllTracks();
+    PageResponse<TrackResponse> getAllTracks(TrackParams params);
     void deleteTrack(Long id);
 }
