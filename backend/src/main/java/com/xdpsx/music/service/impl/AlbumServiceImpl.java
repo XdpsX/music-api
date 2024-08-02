@@ -23,7 +23,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,21 +49,11 @@ public class AlbumServiceImpl implements AlbumService {
         }
 
         // Genre
-        Genre genre = genreRepository.findById(request.getGenreId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(String.format("Not found genre with ID=%s", request.getGenreId()))
-                );
+        Genre genre = fetchGenreById(request.getGenreId());
         album.setGenre(genre);
 
         // Artist
-        List<Artist> artists = new ArrayList<>();
-        for (Long artistId: request.getArtistIds()) {
-            Artist artist = artistRepository.findById(artistId)
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId))
-                    );
-            artists.add(artist);
-        }
+        List<Artist> artists = getArtistsByIds(request.getArtistIds());
         album.setArtists(artists);
 
         Album savedAlbum = albumRepository.save(album);
@@ -72,38 +61,27 @@ public class AlbumServiceImpl implements AlbumService {
     }
 
     @Override
-    public AlbumResponse updateAlbum(Long id, AlbumRequest request, MultipartFile image) {
-        Album album = albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", id)));
+    public AlbumResponse updateAlbum(Long id, AlbumRequest request, MultipartFile newImage) {
+        Album album = fetchAlbumById(id);
         album.updateAlbum(request);
 
         // Image
         String oldImage = null;
-        if (image != null){
+        if (newImage != null){
             oldImage = album.getImage();
-            String newImageUrl = fileService.uploadFile(image, ALBUMS_IMG_FOLDER);
+            String newImageUrl = fileService.uploadFile(newImage, ALBUMS_IMG_FOLDER);
             album.setImage(newImageUrl);
         }
 
         // Genre
         if (!album.getGenre().getId().equals(request.getGenreId())){
-            Genre newGenre = genreRepository.findById(request.getGenreId())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(String.format("Not found genre with ID=%s", request.getGenreId()))
-                    );
+            Genre newGenre = fetchGenreById(request.getGenreId());
             album.setGenre(newGenre);
         }
 
         // Artist
         if (!Compare.isSameArtists(album.getArtists(), request.getArtistIds())){
-            List<Artist> newArtists = new ArrayList<>();
-            for (Long artistId: request.getArtistIds()) {
-                Artist artist = artistRepository.findById(artistId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId))
-                        );
-                newArtists.add(artist);
-            }
+            List<Artist> newArtists = getArtistsByIds(request.getArtistIds());
             album.setArtists(newArtists);
         }
 
@@ -116,8 +94,7 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Override
     public AlbumResponse getAlbumById(Long id) {
-        Album album = albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", id)));
+        Album album = fetchAlbumById(id);
         return this.mapToResponse(album);
     }
 
@@ -127,33 +104,30 @@ public class AlbumServiceImpl implements AlbumService {
         Page<Album> albumPage = albumRepository.findAlbumsWithFilters(
                 pageable, params.getSearch(), params.getSort()
         );
-        List<AlbumResponse> responses = albumPage.getContent().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-        return buildPageResponse(albumPage, responses);
+        return getAlbumResponses(albumPage);
     }
 
     @Override
     public void deleteAlbum(Long id) {
-        Album album = albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", id)));
+        Album album = fetchAlbumById(id);
         fileService.deleteFileByUrl(album.getImage());
         albumRepository.delete(album);
     }
 
     @Override
     public PageResponse<AlbumResponse> getAlbumsByGenreId(Integer genreId, AlbumParams params) {
-        Genre genre = genreRepository.findById(genreId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found genre with ID=%s", genreId)));
+        Genre genre = fetchGenreById(genreId);
 
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Album> albumPage = albumRepository.findAlbumsWithGenreFilters(
                 pageable, params.getSearch(), params.getSort(), genre.getId()
         );
-        List<AlbumResponse> responses = albumPage.getContent().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-        return buildPageResponse(albumPage, responses);
+        return getAlbumResponses(albumPage);
+    }
+
+    private Genre fetchGenreById(Integer genreId) {
+        return genreRepository.findById(genreId)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found genre with ID=%s", genreId)));
     }
 
     @Override
@@ -164,10 +138,19 @@ public class AlbumServiceImpl implements AlbumService {
         Page<Album> albumPage = albumRepository.findAlbumsWithArtistFilters(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
         );
-        List<AlbumResponse> responses = albumPage.getContent().stream()
-                .map(this::mapToResponse)
+        return getAlbumResponses(albumPage);
+    }
+
+    private Album fetchAlbumById(Long id) {
+        return albumRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", id)));
+    }
+
+    private List<Artist> getArtistsByIds(List<Long> artistIds) {
+        return artistIds.stream()
+                .map(artistId -> artistRepository.findById(artistId)
+                        .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId))))
                 .collect(Collectors.toList());
-        return buildPageResponse(albumPage, responses);
     }
 
     private AlbumResponse mapToResponse(Album album){
@@ -177,8 +160,10 @@ public class AlbumServiceImpl implements AlbumService {
         return response;
     }
 
-    private static PageResponse<AlbumResponse> buildPageResponse(
-            Page<Album> albumPage, List<AlbumResponse> responses) {
+    private PageResponse<AlbumResponse> getAlbumResponses(Page<Album> albumPage) {
+        List<AlbumResponse> responses = albumPage.getContent().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
         return PageResponse.<AlbumResponse>builder()
                 .items(responses)
                 .pageNum(albumPage.getNumber() + 1)
@@ -187,4 +172,5 @@ public class AlbumServiceImpl implements AlbumService {
                 .totalPages(albumPage.getTotalPages())
                 .build();
     }
+
 }
