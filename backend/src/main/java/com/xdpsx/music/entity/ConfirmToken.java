@@ -18,7 +18,9 @@ public class ConfirmToken {
     private Long id;
 
     @Column(nullable = false)
-    private String token;
+    private String code;
+
+    private boolean revoked;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
