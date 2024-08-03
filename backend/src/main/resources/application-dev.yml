@@ -1,14 +1,42 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:music_app}
-    username: ${POSTGRES_USERNAME:postgres}
-    password: ${POSTGRES_PASSWORD:admin}
+    url: jdbc:postgresql://localhost:5432/music_app
+    username: postgres
+    password: admin
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
+  mail:
+    host: localhost
+    port: 1025
+    username: xdpsx
+    password: xdpsxpass
+    properties:
+      mail:
+        smtp:
+          trust: localhost
+        auth: true
+        starttls:
+          enabled: true
+        connection-timeout: 5000
+        timeout: 3000
+        write-timeout: 5000
+
+server:
+  servlet:
+    context-path: /api/v1
+app:
+  mail:
+    frontend:
+      activation-url: http://localhost:8081/activate-account
+  security:
+    jwt:
+      secret-key: RlNhbjBsM21nVFZHcElGck83dFFLWGlrcFBRRGhyTXhKV240ZmE5
+      access-expiration: 86400000 #1 day
+      refresh-expiration: 604800000 #7 days
