@@ -4,13 +4,12 @@ import com.xdpsx.music.dto.request.LoginRequest;
 import com.xdpsx.music.dto.request.RegisterRequest;
 import com.xdpsx.music.dto.response.TokenResponse;
 import com.xdpsx.music.entity.*;
-import com.xdpsx.music.exception.BadRequestException;
-import com.xdpsx.music.exception.DuplicateResourceException;
-import com.xdpsx.music.exception.ResourceNotFoundException;
-import com.xdpsx.music.exception.TooManyRequestsException;
+import com.xdpsx.music.exception.*;
 import com.xdpsx.music.repository.ConfirmTokenRepository;
 import com.xdpsx.music.repository.RoleRepository;
+import com.xdpsx.music.repository.TokenRepository;
 import com.xdpsx.music.repository.UserRepository;
+import com.xdpsx.music.security.JwtProvider;
 import com.xdpsx.music.service.AuthService;
 import com.xdpsx.music.service.EmailService;
 import com.xdpsx.music.service.TokenService;
@@ -37,6 +36,8 @@ public class AuthServiceImpl implements AuthService {
     private final TokenService tokenService;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
+    private final JwtProvider jwtProvider;
+    private final TokenRepository tokenRepository;
 
 
     @Value("${app.mail.frontend.activation-url}")
@@ -102,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
         confirmToken.setValidatedAt(LocalDateTime.now());
         confirmTokenRepository.save(confirmToken);
 
-        Token jwt = tokenService.saveJwtToken(savedUser);
+        Token jwt = tokenService.createJwtToken(savedUser);
         return TokenResponse.builder()
                 .accessToken(jwt.getAccessToken())
                 .refreshToken(jwt.getRefreshToken())
@@ -121,14 +122,37 @@ public class AuthServiceImpl implements AuthService {
         );
         User user = (User) authentication.getPrincipal();
         tokenService.revokeAllJwtTokens(user);
-        Token jwt = tokenService.saveJwtToken(user);
+        Token jwt = tokenService.createJwtToken(user);
         return TokenResponse.builder()
                 .accessToken(jwt.getAccessToken())
                 .refreshToken(jwt.getRefreshToken())
                 .build();
     }
 
-
-
+    @Override
+    public TokenResponse refreshToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")){
+            return null;
+        }
+        final String refreshToken = authHeader.substring(7);
+        final String userEmail = jwtProvider.extractUsername(refreshToken);
+        if (userEmail != null) {
+            User user = userRepository.findByEmail(userEmail)
+                    .orElse(null);
+            if (user != null && jwtProvider.isTokenValid(refreshToken, user)){
+                Token token = tokenRepository.findByRefreshToken(refreshToken)
+                        .orElse(null);
+                if (token != null && !token.isRevoked()){
+                    tokenService.revokeAllJwtTokens(user);
+                    Token jwt = tokenService.createJwtToken(user);
+                    return TokenResponse.builder()
+                            .accessToken(jwt.getAccessToken())
+                            .refreshToken(jwt.getRefreshToken())
+                            .build();
+                }
+            }
+        }
+        return null;
+    }
 
 }

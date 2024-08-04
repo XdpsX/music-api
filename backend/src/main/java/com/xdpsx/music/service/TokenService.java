@@ -9,6 +9,7 @@ import java.util.List;
 public interface TokenService {
     String generateAndSaveConfirmToken(User user);
     List<ConfirmToken> getTodayConfirmTokensByUser(User user);
-    Token saveJwtToken(User user);
+    Token createJwtToken(User user);
     void revokeAllJwtTokens(User user);
+    void revokeTokenByAccessToken(String accessToken);
 }

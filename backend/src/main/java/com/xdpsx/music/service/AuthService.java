@@ -12,4 +12,5 @@ public interface AuthService {
     TokenResponse activateAccount(String activeCode);
     User getUserByEmail(String email);
     TokenResponse login(LoginRequest request);
+    TokenResponse refreshToken(String authHeader);
 }

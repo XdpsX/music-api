@@ -8,6 +8,7 @@ import com.xdpsx.music.repository.TokenRepository;
 import com.xdpsx.music.security.JwtProvider;
 import com.xdpsx.music.service.TokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -57,7 +58,7 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public Token saveJwtToken(User user) {
+    public Token createJwtToken(User user) {
         String accessToken = jwtProvider.generateAccessToken(user);
         String refreshToken = jwtProvider.generateRefreshToken(user);
         var token = Token.builder()
@@ -70,6 +71,7 @@ public class TokenServiceImpl implements TokenService {
     }
 
     // TODO Try using trigger in db or schedule in spring later
+    @Async
     @Override
     public void revokeAllJwtTokens(User user){
         var validUserTokens = tokenRepository.findAllValidTokensByUser(user.getId());
@@ -79,5 +81,16 @@ public class TokenServiceImpl implements TokenService {
             t.setRevoked(true);
         });
         tokenRepository.saveAll(validUserTokens);
+    }
+
+    @Async
+    @Override
+    public void revokeTokenByAccessToken(String accessToken){
+        var token = tokenRepository.findByAccessToken(accessToken)
+                .orElse(null);
+        if (token != null && !token.isRevoked()){
+            token.setRevoked(true);
+            tokenRepository.save(token);
+        }
     }
 }

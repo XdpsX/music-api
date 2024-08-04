@@ -15,4 +15,5 @@ public interface TokenRepository extends CrudRepository<Token, Long> {
     List<Token> findAllValidTokensByUser(Long userId);
 
     Optional<Token> findByAccessToken(String accessToken);
+    Optional<Token> findByRefreshToken(String refreshToken);
 }

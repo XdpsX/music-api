@@ -85,13 +85,13 @@ public class JwtProvider {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException ex) {
-            throw new JwtValidationException("Access token expired", ex);
+            throw new JwtValidationException("Token expired", ex);
         } catch (IllegalArgumentException | SignatureException ex) {
-            throw new JwtValidationException("Access token is illegal", ex);
+            throw new JwtValidationException("Token is illegal", ex);
         } catch (MalformedJwtException ex) {
-            throw new JwtValidationException("Access token is not well formed", ex);
+            throw new JwtValidationException("Token is not well formed", ex);
         } catch (UnsupportedJwtException ex) {
-            throw new JwtValidationException("Access token is not supported", ex);
+            throw new JwtValidationException("Token is not supported", ex);
         }
     }
 
