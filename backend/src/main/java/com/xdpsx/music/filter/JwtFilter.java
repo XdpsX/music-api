@@ -1,5 +1,8 @@
-package com.xdpsx.music.security;
+package com.xdpsx.music.filter;
 
+import com.xdpsx.music.exception.JwtValidationException;
+import com.xdpsx.music.repository.TokenRepository;
+import com.xdpsx.music.security.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +25,7 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final UserDetailsService userDetailsService;
+    private final TokenRepository tokenRepository;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -37,20 +41,30 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
         jwt = authHeader.substring(7);
-        userEmail = jwtProvider.extractUsername(jwt);
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-            if (jwtProvider.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+        try {
+            userEmail = jwtProvider.extractUsername(jwt);
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                if (jwtProvider.isTokenValid(jwt, userDetails)) {
+                    var isNotRevoked = tokenRepository.findByAccessToken(jwt)
+                            .map(t -> !t.isRevoked())
+                            .orElse(false);
+                    if (isNotRevoked){
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                        authToken.setDetails(
+                                new WebAuthenticationDetailsSource().buildDetails(request)
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
+                }
             }
+        }catch (JwtValidationException ex) {
+            // Set an attribute to indicate an authentication error in auth entry point
+            request.setAttribute("JWT_AUTH_ERROR", ex.getMessage());
         }
         filterChain.doFilter(request, response);
     }

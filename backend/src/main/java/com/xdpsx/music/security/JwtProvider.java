@@ -1,10 +1,10 @@
 package com.xdpsx.music.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import com.xdpsx.music.exception.JwtValidationException;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -77,12 +77,22 @@ public class JwtProvider {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts
-                .parserBuilder()
-                .setSigningKey(getSignInKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts
+                    .parserBuilder()
+                    .setSigningKey(getSignInKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException ex) {
+            throw new JwtValidationException("Access token expired", ex);
+        } catch (IllegalArgumentException | SignatureException ex) {
+            throw new JwtValidationException("Access token is illegal", ex);
+        } catch (MalformedJwtException ex) {
+            throw new JwtValidationException("Access token is not well formed", ex);
+        } catch (UnsupportedJwtException ex) {
+            throw new JwtValidationException("Access token is not supported", ex);
+        }
     }
 
     private Key getSignInKey() {
