@@ -4,6 +4,9 @@ import com.xdpsx.music.dto.common.ErrorDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,6 +21,42 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(LockedException.class)
+    @ResponseStatus(HttpStatus.LOCKED)
+    public ErrorDetails handleLocked(HttpServletRequest request, LockedException e){
+        log.error(e.getMessage(), e);
+
+        ErrorDetails errorDetails = new ErrorDetails(e.getMessage());
+        errorDetails.setStatus(HttpStatus.LOCKED.value());
+        errorDetails.setPath(request.getServletPath());
+
+        return errorDetails;
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorDetails handleDisabled(HttpServletRequest request, DisabledException e){
+        log.error(e.getMessage(), e);
+
+        ErrorDetails errorDetails = new ErrorDetails(e.getMessage());
+        errorDetails.setStatus(HttpStatus.FORBIDDEN.value());
+        errorDetails.setPath(request.getServletPath());
+
+        return errorDetails;
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorDetails handleBadCredentials(HttpServletRequest request, BadCredentialsException e){
+        log.error(e.getMessage(), e);
+
+        ErrorDetails errorDetails = new ErrorDetails("Email and/or Password is incorrect");
+        errorDetails.setStatus(HttpStatus.UNAUTHORIZED.value());
+        errorDetails.setPath(request.getServletPath());
+
+        return errorDetails;
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

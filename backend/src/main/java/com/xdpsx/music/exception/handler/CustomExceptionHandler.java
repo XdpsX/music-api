@@ -1,10 +1,7 @@
 package com.xdpsx.music.exception.handler;
 
 import com.xdpsx.music.dto.common.ErrorDetails;
-import com.xdpsx.music.exception.BadRequestException;
-import com.xdpsx.music.exception.DuplicateResourceException;
-import com.xdpsx.music.exception.ResourceNotFoundException;
-import com.xdpsx.music.exception.TooManyRequestsException;
+import com.xdpsx.music.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,6 +12,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class CustomExceptionHandler {
+
+    @ExceptionHandler(JwtValidationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorDetails handleJwtValidation(HttpServletRequest request, JwtValidationException ex) {
+        log.error(ex.getMessage(), ex);
+
+        ErrorDetails errorDetails = new ErrorDetails(ex.getMessage());
+        errorDetails.setStatus(HttpStatus.UNAUTHORIZED.value());
+        errorDetails.setPath(request.getServletPath());
+        return errorDetails;
+    }
 
     @ExceptionHandler(TooManyRequestsException.class)
     @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
