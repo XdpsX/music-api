@@ -65,8 +65,19 @@ public class TokenServiceImpl implements TokenService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .revoked(false)
-                .expired(false)
                 .build();
         return tokenRepository.save(token);
+    }
+
+    // TODO Try using trigger in db or schedule in spring later
+    @Override
+    public void revokeAllJwtTokens(User user){
+        var validUserTokens = tokenRepository.findAllValidTokensByUser(user.getId());
+        if (validUserTokens.isEmpty())
+            return;
+        validUserTokens.forEach(t -> {
+            t.setRevoked(true);
+        });
+        tokenRepository.saveAll(validUserTokens);
     }
 }

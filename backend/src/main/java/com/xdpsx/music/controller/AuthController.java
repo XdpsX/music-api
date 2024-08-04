@@ -1,5 +1,6 @@
 package com.xdpsx.music.controller;
 
+import com.xdpsx.music.dto.request.LoginRequest;
 import com.xdpsx.music.dto.request.RegisterRequest;
 import com.xdpsx.music.dto.response.TokenResponse;
 import com.xdpsx.music.entity.User;
@@ -37,6 +38,14 @@ public class AuthController {
             @RequestParam String activeCode
     ) {
         TokenResponse response = authService.activateAccount(activeCode);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<TokenResponse> login(
+            @Valid @RequestBody LoginRequest request
+    ) {
+        TokenResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 }

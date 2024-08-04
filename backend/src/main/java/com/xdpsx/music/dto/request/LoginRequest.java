@@ -8,17 +8,12 @@ import lombok.Data;
 
 @Data
 @Builder
-public class RegisterRequest {
-    @NotBlank
-    @Size(max=128)
-    private String name;
-
+public class LoginRequest {
     @Email(message = "Email is in wrong format")
     @NotBlank
     @Size(max=128)
     private String email;
 
     @NotBlank
-    @Size(min = 8, message = "Password should be 8 characters long minimum")
     private String password;
 }

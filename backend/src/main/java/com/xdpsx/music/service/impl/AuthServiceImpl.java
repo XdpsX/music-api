@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.dto.request.LoginRequest;
 import com.xdpsx.music.dto.request.RegisterRequest;
 import com.xdpsx.music.dto.response.TokenResponse;
 import com.xdpsx.music.entity.*;
@@ -16,6 +17,9 @@ import com.xdpsx.music.service.TokenService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final ConfirmTokenRepository confirmTokenRepository;
     private final TokenService tokenService;
     private final EmailService emailService;
+    private final AuthenticationManager authenticationManager;
 
 
     @Value("${app.mail.frontend.activation-url}")
@@ -108,6 +113,21 @@ public class AuthServiceImpl implements AuthService {
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
     }
+
+    @Override
+    public TokenResponse login(LoginRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+        User user = (User) authentication.getPrincipal();
+        tokenService.revokeAllJwtTokens(user);
+        Token jwt = tokenService.saveJwtToken(user);
+        return TokenResponse.builder()
+                .accessToken(jwt.getAccessToken())
+                .refreshToken(jwt.getRefreshToken())
+                .build();
+    }
+
 
 
 

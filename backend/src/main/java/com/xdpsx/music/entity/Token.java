@@ -21,8 +21,6 @@ public class Token {
     @Column(nullable = false)
     private String refreshToken;
 
-    private boolean expired;
-
     private boolean revoked;
 
     @ManyToOne

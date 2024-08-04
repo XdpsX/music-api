@@ -1,6 +1,7 @@
 package com.xdpsx.music.constant;
 
 public class SecurityConstants {
+    public static final String HELLO_WORLD_URL = "/helloworld/**";
     public static final String GENRE_URL = "/genres/**";
     public static final String ALBUM_URL = "/albums/**";
     public static final String ARTIST_URL = "/artists/**";
@@ -12,6 +13,7 @@ public class SecurityConstants {
     };
 
     public static final String[] PUBLIC_GET_URLS = {
+            HELLO_WORLD_URL,
             GENRE_URL,
             ALBUM_URL,
             ARTIST_URL,
