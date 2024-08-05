@@ -6,7 +6,7 @@ import com.xdpsx.music.dto.request.UserProfileRequest;
 import com.xdpsx.music.dto.request.params.UserParams;
 import com.xdpsx.music.dto.response.UserProfileResponse;
 import com.xdpsx.music.dto.response.UserResponse;
-import com.xdpsx.music.entity.User;
+import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.UserService;
 import jakarta.validation.Valid;

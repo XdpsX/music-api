@@ -2,7 +2,7 @@ package com.xdpsx.music.service.impl;
 
 import com.xdpsx.music.dto.request.GenreRequest;
 import com.xdpsx.music.dto.response.GenreResponse;
-import com.xdpsx.music.entity.Genre;
+import com.xdpsx.music.model.entity.Genre;
 import com.xdpsx.music.exception.BadRequestException;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.GenreMapper;

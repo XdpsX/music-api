@@ -1,6 +1,6 @@
 package com.xdpsx.music.service;
 
-import com.xdpsx.music.entity.EmailTemplateName;
+import com.xdpsx.music.model.enums.EmailTemplateName;
 import jakarta.mail.MessagingException;
 
 import java.util.Map;

@@ -2,7 +2,7 @@ package com.xdpsx.music.mapper;
 
 import com.xdpsx.music.dto.request.AlbumRequest;
 import com.xdpsx.music.dto.response.AlbumResponse;
-import com.xdpsx.music.entity.Album;
+import com.xdpsx.music.model.entity.Album;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

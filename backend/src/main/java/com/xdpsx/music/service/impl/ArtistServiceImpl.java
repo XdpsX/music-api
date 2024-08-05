@@ -4,7 +4,7 @@ import com.xdpsx.music.dto.request.params.ArtistParams;
 import com.xdpsx.music.dto.request.ArtistRequest;
 import com.xdpsx.music.dto.response.ArtistResponse;
 import com.xdpsx.music.dto.common.PageResponse;
-import com.xdpsx.music.entity.Artist;
+import com.xdpsx.music.model.entity.Artist;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.ArtistMapper;
 import com.xdpsx.music.repository.ArtistRepository;

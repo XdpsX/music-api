@@ -1,7 +1,7 @@
 package com.xdpsx.music.dto.request.params;
 
 import com.xdpsx.music.dto.common.PageParams;
-import com.xdpsx.music.entity.Gender;
+import com.xdpsx.music.model.enums.Gender;
 import com.xdpsx.music.validator.SortFieldConstraint;
 import lombok.Data;
 import lombok.NoArgsConstructor;

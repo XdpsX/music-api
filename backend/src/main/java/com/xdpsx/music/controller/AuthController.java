@@ -5,7 +5,7 @@ import com.xdpsx.music.dto.request.LoginRequest;
 import com.xdpsx.music.dto.request.RegisterRequest;
 import com.xdpsx.music.dto.request.ResetPasswordRequest;
 import com.xdpsx.music.dto.response.TokenResponse;
-import com.xdpsx.music.entity.User;
+import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.service.AuthService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;

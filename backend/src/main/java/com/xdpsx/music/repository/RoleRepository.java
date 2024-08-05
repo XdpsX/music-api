@@ -1,6 +1,6 @@
 package com.xdpsx.music.repository;
 
-import com.xdpsx.music.entity.Role;
+import com.xdpsx.music.model.entity.Role;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;

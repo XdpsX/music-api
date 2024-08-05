@@ -1,6 +1,6 @@
 package com.xdpsx.music.util;
 
-import com.xdpsx.music.entity.Artist;
+import com.xdpsx.music.model.entity.Artist;
 
 import java.util.List;
 import java.util.stream.Collectors;

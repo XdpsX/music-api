@@ -2,7 +2,7 @@ package com.xdpsx.music.mapper;
 
 import com.xdpsx.music.dto.request.ArtistRequest;
 import com.xdpsx.music.dto.response.ArtistResponse;
-import com.xdpsx.music.entity.Artist;
+import com.xdpsx.music.model.entity.Artist;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

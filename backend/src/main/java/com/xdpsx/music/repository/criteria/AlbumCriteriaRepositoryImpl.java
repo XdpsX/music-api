@@ -1,6 +1,6 @@
 package com.xdpsx.music.repository.criteria;
 
-import com.xdpsx.music.entity.Album;
+import com.xdpsx.music.model.entity.Album;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.*;

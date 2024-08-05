@@ -1,5 +1,6 @@
-package com.xdpsx.music.entity;
+package com.xdpsx.music.model.entity;
 
+import com.xdpsx.music.model.enums.Gender;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

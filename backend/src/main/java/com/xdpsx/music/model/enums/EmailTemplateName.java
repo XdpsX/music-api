@@ -1,4 +1,4 @@
-package com.xdpsx.music.entity;
+package com.xdpsx.music.model.enums;
 
 import lombok.Getter;
 

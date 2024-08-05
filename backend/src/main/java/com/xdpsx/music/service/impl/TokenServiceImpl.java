@@ -1,8 +1,8 @@
 package com.xdpsx.music.service.impl;
 
-import com.xdpsx.music.entity.ConfirmToken;
-import com.xdpsx.music.entity.Token;
-import com.xdpsx.music.entity.User;
+import com.xdpsx.music.model.entity.ConfirmToken;
+import com.xdpsx.music.model.entity.Token;
+import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.repository.ConfirmTokenRepository;
 import com.xdpsx.music.repository.TokenRepository;
 import com.xdpsx.music.security.JwtProvider;

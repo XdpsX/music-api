@@ -1,7 +1,7 @@
 package com.xdpsx.music.repository.criteria;
 
-import com.xdpsx.music.entity.Artist;
-import com.xdpsx.music.entity.Gender;
+import com.xdpsx.music.model.entity.Artist;
+import com.xdpsx.music.model.enums.Gender;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.*;

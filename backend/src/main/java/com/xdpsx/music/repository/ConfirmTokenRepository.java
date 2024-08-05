@@ -1,7 +1,7 @@
 package com.xdpsx.music.repository;
 
-import com.xdpsx.music.entity.ConfirmToken;
-import com.xdpsx.music.entity.User;
+import com.xdpsx.music.model.entity.ConfirmToken;
+import com.xdpsx.music.model.entity.User;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;

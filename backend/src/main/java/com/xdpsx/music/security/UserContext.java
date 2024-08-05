@@ -1,6 +1,6 @@
 package com.xdpsx.music.security;
 
-import com.xdpsx.music.entity.User;
+import com.xdpsx.music.model.entity.User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;

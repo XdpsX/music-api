@@ -1,6 +1,6 @@
 package com.xdpsx.music.dto.request;
 
-import com.xdpsx.music.entity.Gender;
+import com.xdpsx.music.model.enums.Gender;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;

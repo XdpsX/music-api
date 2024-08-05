@@ -1,6 +1,6 @@
 package com.xdpsx.music.repository;
 
-import com.xdpsx.music.entity.User;
+import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.repository.criteria.UserCriteriaRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
 

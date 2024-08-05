@@ -1,6 +1,6 @@
 package com.xdpsx.music.repository.criteria;
 
-import com.xdpsx.music.entity.Track;
+import com.xdpsx.music.model.entity.Track;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

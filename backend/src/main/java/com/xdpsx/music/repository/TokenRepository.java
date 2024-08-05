@@ -1,6 +1,6 @@
 package com.xdpsx.music.repository;
 
-import com.xdpsx.music.entity.Token;
+import com.xdpsx.music.model.entity.Token;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 

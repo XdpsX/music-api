@@ -1,6 +1,6 @@
 package com.xdpsx.music;
 
-import com.xdpsx.music.entity.Role;
+import com.xdpsx.music.model.entity.Role;
 import com.xdpsx.music.repository.RoleRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;

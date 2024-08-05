@@ -1,4 +1,4 @@
-package com.xdpsx.music.entity;
+package com.xdpsx.music.model.entity;
 
 import com.xdpsx.music.dto.request.AlbumRequest;
 import jakarta.persistence.*;

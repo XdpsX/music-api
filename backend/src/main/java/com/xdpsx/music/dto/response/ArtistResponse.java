@@ -1,6 +1,6 @@
 package com.xdpsx.music.dto.response;
 
-import com.xdpsx.music.entity.Gender;
+import com.xdpsx.music.model.enums.Gender;
 import lombok.Builder;
 import lombok.Data;
 
