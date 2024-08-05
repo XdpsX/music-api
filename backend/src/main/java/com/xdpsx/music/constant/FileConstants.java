@@ -6,4 +6,5 @@ public class FileConstants {
     public final static String ALBUMS_IMG_FOLDER = "albums";
     public final static String TRACKS_IMG_FOLDER = "tracks/images";
     public final static String TRACKS_FILE_FOLDER = "tracks/files";
+    public final static String USERS_IMG_FOLDER = "users";
 }
