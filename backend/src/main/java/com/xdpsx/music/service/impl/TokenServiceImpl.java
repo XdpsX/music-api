@@ -27,16 +27,28 @@ public class TokenServiceImpl implements TokenService {
     private final static int ACTIVE_CODE_LENGTH = 6;
 
     @Override
-    public String generateAndSaveConfirmToken(User user) {
+    public String generateAndSaveConfirmToken(User user, int validMinutes) {
         String generatedCode = generateCode();
         ConfirmToken token = ConfirmToken.builder()
                 .code(generatedCode)
                 .createdAt(LocalDateTime.now())
-                .expiredAt(LocalDateTime.now().plusMinutes(10))
+                .expiredAt(LocalDateTime.now().plusMinutes(validMinutes))
                 .user(user)
                 .build();
         confirmTokenRepository.save(token);
         return generatedCode;
+    }
+
+    // TODO Try using trigger in db or schedule in spring later
+    @Override
+    public void revokeAllConfirmTokens(User user){
+        var validTokens = confirmTokenRepository.findAllValidTokensByUser(user.getId());
+        if (validTokens.isEmpty())
+            return;
+        validTokens.forEach(t -> {
+            t.setRevoked(true);
+        });
+        confirmTokenRepository.saveAll(validTokens);
     }
 
     private String generateCode() {
@@ -71,7 +83,6 @@ public class TokenServiceImpl implements TokenService {
     }
 
     // TODO Try using trigger in db or schedule in spring later
-    @Async
     @Override
     public void revokeAllJwtTokens(User user){
         var validUserTokens = tokenRepository.findAllValidTokensByUser(user.getId());

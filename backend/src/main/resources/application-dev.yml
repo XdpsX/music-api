@@ -34,7 +34,8 @@ server:
 app:
   mail:
     frontend:
-      activation-url: http://localhost:8081/activate-account
+      root-url: http://localhost:8081
+      activation-url: ${app.mail.frontend.root-url}/activate-account
   security:
     jwt:
       secret-key: RlNhbjBsM21nVFZHcElGck83dFFLWGlrcFBRRGhyTXhKV240ZmE5

@@ -1,7 +1,9 @@
 package com.xdpsx.music.controller;
 
+import com.xdpsx.music.dto.request.ForgotPasswordRequest;
 import com.xdpsx.music.dto.request.LoginRequest;
 import com.xdpsx.music.dto.request.RegisterRequest;
+import com.xdpsx.music.dto.request.ResetPasswordRequest;
 import com.xdpsx.music.dto.response.TokenResponse;
 import com.xdpsx.music.entity.User;
 import com.xdpsx.music.service.AuthService;
@@ -59,5 +61,19 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) throws MessagingException {
+        authService.forgotPassword(request);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok().build();
     }
 }

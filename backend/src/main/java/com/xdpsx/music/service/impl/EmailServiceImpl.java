@@ -13,7 +13,6 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -24,8 +23,8 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     @Override
-    public void sendEmail(String to, String username, EmailTemplateName emailTemplate,
-                          String confirmationUrl, String activationCode, String subject) throws MessagingException {
+    public void sendEmail(String to, EmailTemplateName emailTemplate,
+                          String subject, Map properties) throws MessagingException {
         String templateName = emailTemplate.getName();
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -34,11 +33,6 @@ public class EmailServiceImpl implements EmailService {
                 MimeMessageHelper.MULTIPART_MODE_MIXED,
                 StandardCharsets.UTF_8.name()
         );
-
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("username", username);
-        properties.put("confirmationUrl", confirmationUrl);
-        properties.put("activation_code", activationCode);
 
         Context context = new Context();
         context.setVariables(properties);

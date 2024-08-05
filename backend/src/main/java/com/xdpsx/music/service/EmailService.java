@@ -3,13 +3,13 @@ package com.xdpsx.music.service;
 import com.xdpsx.music.entity.EmailTemplateName;
 import jakarta.mail.MessagingException;
 
+import java.util.Map;
+
 public interface EmailService {
     void sendEmail(
             String to,
-            String username,
             EmailTemplateName emailTemplate,
-            String confirmationUrl,
-            String activationCode,
-            String subject
+            String subject,
+            Map properties
     ) throws MessagingException;
 }

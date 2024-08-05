@@ -1,7 +1,9 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.dto.request.ForgotPasswordRequest;
 import com.xdpsx.music.dto.request.LoginRequest;
 import com.xdpsx.music.dto.request.RegisterRequest;
+import com.xdpsx.music.dto.request.ResetPasswordRequest;
 import com.xdpsx.music.dto.response.TokenResponse;
 import com.xdpsx.music.entity.*;
 import com.xdpsx.music.exception.*;
@@ -17,6 +19,8 @@ import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
     private String activationUrl;
 
     private final static int NUM_EMAILS_PER_DAY = 5;
+    private final static int CODE_VALID_TIME = 10;
 
     @Override
     public void register(RegisterRequest request) throws MessagingException {
@@ -66,20 +73,26 @@ public class AuthServiceImpl implements AuthService {
         sendActivateAccountEmail(savedUser);
     }
 
+    @Override
     public void sendActivateAccountEmail(User user) throws MessagingException {
         List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
         if (existingTokens.size() >= NUM_EMAILS_PER_DAY){
             throw new TooManyRequestsException(
                     String.format("You can send request %s times per day", NUM_EMAILS_PER_DAY));
         }
-        String activeCode = tokenService.generateAndSaveConfirmToken(user);
+        tokenService.revokeAllConfirmTokens(user);
+        String activeCode = tokenService.generateAndSaveConfirmToken(user, CODE_VALID_TIME);
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("username", user.getName());
+        properties.put("confirmationUrl", activationUrl);
+        properties.put("activeCode", activeCode);
+        properties.put("validTime", CODE_VALID_TIME);
         emailService.sendEmail(
                 user.getEmail(),
-                user.getName(),
                 EmailTemplateName.ACTIVATE_ACCOUNT,
-                activationUrl,
-                activeCode,
-                "Account activation"
+                "Account activation",
+                properties
         );
     }
 
@@ -153,6 +166,60 @@ public class AuthServiceImpl implements AuthService {
             }
         }
         return null;
+    }
+
+    @Override
+    public void forgotPassword(ForgotPasswordRequest request) throws MessagingException {
+        String email = request.getEmail();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(String.format("Email = %s not found", email)));
+        if (!user.isEnabled()) {
+            throw new DisabledException(String.format("User with email=%s is not active", email));
+        }
+        if (user.isAccountLocked()) {
+            throw new LockedException(String.format("User with email=%s is locked", email));
+        }
+        sendResetPasswordEmail(user);
+    }
+
+    @Transactional
+    @Override
+    public void resetPassword(ResetPasswordRequest request) {
+        var confirmToken = confirmTokenRepository.findByCode(request.getResetCode())
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found active code %s", request.getResetCode())));
+        if (LocalDateTime.now().isAfter(confirmToken.getExpiredAt())
+                || confirmToken.isRevoked()
+                || confirmToken.getValidatedAt() != null) {
+            throw new BadRequestException("Reset code has expired");
+        }
+        var userToUpdate = confirmToken.getUser();
+        userToUpdate.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(userToUpdate);
+
+        confirmToken.setValidatedAt(LocalDateTime.now());
+        confirmTokenRepository.save(confirmToken);
+    }
+
+    private void sendResetPasswordEmail(User user) throws MessagingException {
+        List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
+        if (existingTokens.size() >= NUM_EMAILS_PER_DAY){
+            throw new TooManyRequestsException(
+                    String.format("You can send request %s times per day", NUM_EMAILS_PER_DAY));
+        }
+        tokenService.revokeAllConfirmTokens(user);
+        String resetCode = tokenService.generateAndSaveConfirmToken(user, CODE_VALID_TIME);
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("username", user.getName());
+        properties.put("resetCode", resetCode);
+        properties.put("validTime", CODE_VALID_TIME);
+        emailService.sendEmail(
+                user.getEmail(),
+                EmailTemplateName.RESET_PASSWORD,
+                "Reset Password",
+                properties
+
+        );
     }
 
 }
