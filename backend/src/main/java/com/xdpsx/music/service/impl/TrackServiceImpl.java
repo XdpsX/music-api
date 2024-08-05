@@ -4,10 +4,7 @@ import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
 import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.TrackResponse;
-import com.xdpsx.music.model.entity.Album;
-import com.xdpsx.music.model.entity.Artist;
-import com.xdpsx.music.model.entity.Genre;
-import com.xdpsx.music.model.entity.Track;
+import com.xdpsx.music.model.entity.*;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.TrackMapper;
 import com.xdpsx.music.repository.AlbumRepository;
@@ -135,6 +132,15 @@ public class TrackServiceImpl implements TrackService {
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findWithAlbumFilters(
                 pageable, params.getSearch(), params.getSort(), album.getId()
+        );
+        return getTrackResponses(trackPage);
+    }
+
+    @Override
+    public PageResponse<TrackResponse> getLikedTracks(TrackParams params, User loggedUser) {
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Track> trackPage = trackRepository.findLikedTracksByUserId(
+                loggedUser.getId(), pageable, params.getSearch(), params.getSort()
         );
         return getTrackResponses(trackPage);
     }

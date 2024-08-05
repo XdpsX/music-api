@@ -32,5 +32,5 @@ public class Like {
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private LocalDateTime likedAt;
+    private LocalDateTime createdAt;
 }

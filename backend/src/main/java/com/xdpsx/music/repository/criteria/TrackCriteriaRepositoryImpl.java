@@ -1,5 +1,6 @@
 package com.xdpsx.music.repository.criteria;
 
+import com.xdpsx.music.model.entity.Like;
 import com.xdpsx.music.model.entity.Track;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -19,18 +20,66 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
     private EntityManager entityManager;
 
     @Override
+    public Page<Track> findLikedTracksByUserId(Long userId, Pageable pageable, String name, String sort) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Track> cq = cb.createQuery(Track.class);
+        Root<Track> track = cq.from(Track.class);
+        Join<Track, Like> like = track.join("usersLiked");
+
+        Predicate userPredicate = cb.equal(like.get("user").get("id"), userId);
+        Predicate namePredicate = cb.conjunction();
+
+        if (name != null && !name.isEmpty()) {
+            namePredicate = cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%");
+        }
+
+        cq.where(cb.and(userPredicate, namePredicate));
+
+        applyBasicSorting(cb, cq, track, sort);
+
+        List<Track> tracks = entityManager.createQuery(cq)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        long total = getTotalCount(cb, userId, name);
+
+        return new PageImpl<>(tracks, pageable, total);
+    }
+
+    private long getTotalCount(CriteriaBuilder cb, Long userId, String name) {
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Like> countRoot = countQuery.from(Like.class);
+        Join<Like, Track> track = countRoot.join("track");
+
+        Predicate userPredicate = cb.equal(countRoot.get("user").get("id"), userId);
+        Predicate namePredicate = cb.conjunction();
+
+        if (name != null && !name.isEmpty()) {
+            namePredicate = cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%");
+        }
+
+        countQuery.select(cb.count(countRoot)).where(cb.and(userPredicate, namePredicate));
+
+        return entityManager.createQuery(countQuery).getSingleResult();
+    }
+
+    @Override
     public Page<Track> findWithFilters(Pageable pageable, String name, String sort) {
         return findTracks(pageable, name, null, null, null, sort, false);
     }
 
+    @Override
     public Page<Track> findWithAlbumFilters(Pageable pageable, String name, String sort, Long albumId) {
         return findTracksWithAlbumSorting(pageable, name, albumId, sort);
     }
 
+    @Override
     public Page<Track> findWithGenreFilters(Pageable pageable, String name, String sort, Integer genreId) {
         return findTracks(pageable, name, null, genreId, null, sort, true);
     }
 
+    @Override
     public Page<Track> findWithArtistFilters(Pageable pageable, String name, String sort, Long artistId) {
         return findTracks(pageable, name, null, null, artistId, sort, true);
     }
@@ -97,14 +146,23 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
             boolean desc = sortField.startsWith("-");
             String field = desc ? sortField.substring(1) : sortField;
 
-            Path<?> path = switch (field) {
-                case DATE_FIELD -> track.get("createdAt");
-                case NAME_FIELD -> track.get("name");
-                default -> null;
-            };
+            if (TOTAL_LIKES_FIELD.equals(field)) {
+                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                Root<Like> like = subquery.from(Like.class);
+                subquery.select(cb.count(like))
+                        .where(cb.equal(like.get("track"), track));
 
-            if (path != null) {
-                cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                cq.orderBy(desc ? cb.desc(subquery) : cb.asc(subquery));
+            } else {
+                Path<?> path = switch (field) {
+                    case DATE_FIELD -> track.get("createdAt");
+                    case NAME_FIELD -> track.get("name");
+                    default -> null;
+                };
+
+                if (path != null) {
+                    cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
             }
         }
     }
@@ -114,14 +172,23 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
             boolean desc = sortField.startsWith("-");
             String field = desc ? sortField.substring(1) : sortField;
 
-            Path<?> path = switch (field) {
-                case DATE_FIELD -> track.get("trackNumber");
-                case NAME_FIELD -> track.get("name");
-                default -> null;
-            };
+            if (TOTAL_LIKES_FIELD.equals(field)) {
+                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                Root<Like> like = subquery.from(Like.class);
+                subquery.select(cb.count(like))
+                        .where(cb.equal(like.get("track"), track));
 
-            if (path != null) {
-                cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                cq.orderBy(desc ? cb.desc(subquery) : cb.asc(subquery));
+            } else {
+                Path<?> path = switch (field) {
+                    case DATE_FIELD -> track.get("trackNumber");
+                    case NAME_FIELD -> track.get("name");
+                    default -> null;
+                };
+
+                if (path != null) {
+                    cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
             }
         }
     }

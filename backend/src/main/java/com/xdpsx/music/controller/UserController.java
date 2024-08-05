@@ -3,11 +3,14 @@ package com.xdpsx.music.controller;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.ChangePasswordRequest;
 import com.xdpsx.music.dto.request.UserProfileRequest;
+import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.request.params.UserParams;
+import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.dto.response.UserProfileResponse;
 import com.xdpsx.music.dto.response.UserResponse;
 import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.security.UserContext;
+import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ public class UserController {
 
     private final UserContext userContext;
     private final UserService userService;
+    private final TrackService trackService;
 
     @PatchMapping("/change-password")
     public ResponseEntity<Void> changePassword(
@@ -71,6 +75,15 @@ public class UserController {
             @Valid UserParams params
     ){
         PageResponse<UserResponse> responses = userService.getAllUsers(params);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/me/favorites")
+    public ResponseEntity<PageResponse<TrackResponse>> getFavoriteTracks(
+            @Valid TrackParams params
+    ){
+        User loggedUser = userContext.getLoggedUser();
+        PageResponse<TrackResponse> responses = trackService.getLikedTracks(params, loggedUser);
         return ResponseEntity.ok(responses);
     }
 }

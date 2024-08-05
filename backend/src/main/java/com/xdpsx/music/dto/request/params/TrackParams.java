@@ -12,6 +12,6 @@ import static com.xdpsx.music.constant.PageConstants.*;
 public class TrackParams extends PageParams {
     private String search;
 
-    @SortFieldConstraint(sortFields = {DATE_FIELD, NAME_FIELD})
+    @SortFieldConstraint(sortFields = {DATE_FIELD, NAME_FIELD, TOTAL_LIKES_FIELD})
     private String sort = DEFAULT_SORT_FIELD;
 }
