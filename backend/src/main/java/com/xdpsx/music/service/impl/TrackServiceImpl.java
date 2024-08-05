@@ -74,13 +74,13 @@ public class TrackServiceImpl implements TrackService {
         Track updatedTrack = trackRepository.save(trackToUpdate);
         deleteOldFiles(trackToUpdate, newImage, newFile);
 
-        return trackMapper.fromEntityToResponse(updatedTrack);
+        return this.mapToResponse(updatedTrack);
     }
 
     @Override
     public TrackResponse getTrackById(Long id) {
         Track track = getTrack(id);
-        return trackMapper.fromEntityToResponse(track);
+        return this.mapToResponse(track);
     }
 
     @Override
@@ -137,6 +137,13 @@ public class TrackServiceImpl implements TrackService {
                 pageable, params.getSearch(), params.getSort(), album.getId()
         );
         return getTrackResponses(trackPage);
+    }
+
+    private TrackResponse mapToResponse(Track track){
+        TrackResponse response = trackMapper.fromEntityToResponse(track);
+        long totalLikes = trackRepository.countLikesByTrackId(track.getId());
+        response.setTotalLikes(totalLikes);
+        return response;
     }
 
     private List<Artist> getArtists(List<Long> artistIds) {
@@ -248,7 +255,7 @@ public class TrackServiceImpl implements TrackService {
 
     private PageResponse<TrackResponse> getTrackResponses(Page<Track> trackPage) {
         List<TrackResponse> responses = trackPage.getContent().stream()
-                .map(trackMapper::fromEntityToResponse)
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
         return PageResponse.<TrackResponse>builder()
                 .items(responses)

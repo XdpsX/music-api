@@ -14,6 +14,7 @@ public class TrackResponse {
     private Integer durationMs;
     private String image;
     private String url;
+    private long totalLikes;
     private LocalDateTime createdAt;
     private Integer trackNumber;
     private AlbumResponse album;
