@@ -60,4 +60,9 @@ public class Track {
     )
     private List<Artist> artists;
 
+    @OneToMany(
+            cascade = CascadeType.REMOVE,
+            mappedBy = "track"
+    )
+    private List<Like> usersLiked;
 }

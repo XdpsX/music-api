@@ -4,6 +4,9 @@ import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
 import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.TrackResponse;
+import com.xdpsx.music.model.entity.User;
+import com.xdpsx.music.security.UserContext;
+import com.xdpsx.music.service.LikeService;
 import com.xdpsx.music.service.TrackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +15,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/tracks")
 @RequiredArgsConstructor
 public class TrackController {
+    private final UserContext userContext;
     private final TrackService trackService;
+    private final LikeService likeService;
 
     @PostMapping
     public ResponseEntity<TrackResponse> createTrack(
@@ -57,5 +65,29 @@ public class TrackController {
     public ResponseEntity<Void> deleteTrack(@PathVariable Long id) {
         trackService.deleteTrack(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping("/{trackId}/likes")
+    public ResponseEntity<?> likeTrack(@PathVariable Long trackId){
+        User loggedUser = userContext.getLoggedUser();
+        likeService.likeTrack(trackId, loggedUser);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{trackId}/unlikes")
+    public ResponseEntity<?> unlikeTrack(@PathVariable Long trackId){
+        User loggedUser = userContext.getLoggedUser();
+        likeService.unlikeTrack(trackId, loggedUser);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/likes/contains")
+    public ResponseEntity<List<Boolean>> checkLikesTrack(
+            @RequestParam List<Long> trackIds) {
+        User loggedUser = userContext.getLoggedUser();
+        List<Boolean> responses = trackIds.stream()
+                .map(trackId -> likeService.isTrackLikedByUser(trackId, loggedUser.getId()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
     }
 }

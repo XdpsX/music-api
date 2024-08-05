@@ -56,6 +56,12 @@ public class User implements UserDetails {
     @OneToMany(cascade = CascadeType.REMOVE, mappedBy = "owner")
     private List<Playlist> playlists;
 
+    @OneToMany(
+            cascade = CascadeType.REMOVE,
+            mappedBy = "user"
+    )
+    private List<Like> likedTracks;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("Role_" + role.getName()));
