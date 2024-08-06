@@ -1,6 +1,8 @@
 package com.xdpsx.music.repository.criteria;
 
+import com.xdpsx.music.model.entity.Like;
 import com.xdpsx.music.model.entity.Playlist;
+import com.xdpsx.music.model.entity.PlaylistTrack;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.*;
@@ -57,8 +59,13 @@ public class PlaylistCriteriaRepositoryImpl implements PlaylistCriteriaRepositor
             String field = desc ? sortField.substring(1) : sortField;
 
             switch (field) {
-                case NUM_TRACKS_FIELD -> {
-                    // TODO
+                case TOTAL_TRACKS_FIELD -> {
+                    Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                    Root<PlaylistTrack> playlistTrackRoot = subquery.from(PlaylistTrack.class);
+                    subquery.select(cb.count(playlistTrackRoot))
+                            .where(cb.equal(playlistTrackRoot.get("playlist"), root));
+
+                    cq.orderBy(desc ? cb.desc(subquery) : cb.asc(subquery));
                 }
                 case DATE_FIELD -> {
                     Path<LocalDateTime> updatedAtPath = root.get("updatedAt");

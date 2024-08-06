@@ -11,6 +11,6 @@ import static com.xdpsx.music.constant.PageConstants.DEFAULT_SORT_FIELD;
 public class PlaylistParam extends PageParams {
     private String search;
 
-    @SortFieldConstraint(sortFields = {DATE_FIELD, NAME_FIELD, NUM_TRACKS_FIELD})
+    @SortFieldConstraint(sortFields = {DATE_FIELD, NAME_FIELD, TOTAL_TRACKS_FIELD})
     private String sort = DEFAULT_SORT_FIELD;
 }

@@ -99,7 +99,7 @@ public class AlbumCriteriaRepositoryImpl implements AlbumCriteriaRepository {
             String field = desc ? sortField.substring(1) : sortField;
 
             switch (field) {
-                case NUM_TRACKS_FIELD: {
+                case TOTAL_TRACKS_FIELD: {
                     Join<Album, Object> tracks = album.join("tracks", JoinType.LEFT);
                     cq.groupBy(album.get("id"));
                     cq.orderBy(desc ? cb.desc(cb.count(tracks)) : cb.asc(cb.count(tracks)));

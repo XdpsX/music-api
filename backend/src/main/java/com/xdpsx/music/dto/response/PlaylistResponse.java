@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class PlaylistResponse {
     private Long id;
     private String name;
+    private int totalTracks;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UserProfileResponse owner;

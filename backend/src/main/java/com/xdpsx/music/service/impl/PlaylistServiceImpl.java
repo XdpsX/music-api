@@ -3,13 +3,16 @@ package com.xdpsx.music.service.impl;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.PlaylistRequest;
 import com.xdpsx.music.dto.request.params.PlaylistParam;
+import com.xdpsx.music.dto.response.AlbumResponse;
 import com.xdpsx.music.dto.response.PlaylistResponse;
 import com.xdpsx.music.exception.DuplicateResourceException;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.PlaylistMapper;
+import com.xdpsx.music.model.entity.Album;
 import com.xdpsx.music.model.entity.Playlist;
 import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.repository.PlaylistRepository;
+import com.xdpsx.music.repository.PlaylistTrackRepository;
 import com.xdpsx.music.service.PlaylistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class PlaylistServiceImpl implements PlaylistService {
     private final PlaylistMapper playlistMapper;
     private final PlaylistRepository playlistRepository;
+    private final PlaylistTrackRepository playlistTrackRepository;
 
     @Override
     public PlaylistResponse createPlaylist(PlaylistRequest request, User loggedUser) {
@@ -56,7 +60,7 @@ public class PlaylistServiceImpl implements PlaylistService {
                 pageable, params.getSearch(), params.getSort(), loggedUser.getId()
         );
         List<PlaylistResponse> responses = playlistPage.getContent().stream()
-                .map(playlistMapper::fromEntityToResponse)
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
         return PageResponse.<PlaylistResponse>builder()
                 .items(responses)
@@ -65,5 +69,12 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .totalItems(playlistPage.getTotalElements())
                 .totalPages(playlistPage.getTotalPages())
                 .build();
+    }
+
+    private PlaylistResponse mapToResponse(Playlist playlist){
+        PlaylistResponse response = playlistMapper.fromEntityToResponse(playlist);
+        int totalTracks = playlistTrackRepository.countByPlaylistId(playlist.getId());
+        response.setTotalTracks(totalTracks);
+        return response;
     }
 }
