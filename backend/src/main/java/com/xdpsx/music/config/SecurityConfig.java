@@ -1,6 +1,7 @@
 package com.xdpsx.music.config;
 
 import com.xdpsx.music.filter.JwtFilter;
+import com.xdpsx.music.model.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,6 +40,10 @@ public class SecurityConfig {
                     request
                             .requestMatchers(PUBLIC_URLS).permitAll()
                             .requestMatchers(HttpMethod.GET, PUBLIC_GET_URLS).permitAll()
+                            .requestMatchers(HttpMethod.GET, ADMIN_GET_URLS).hasRole(Role.ADMIN)
+                            .requestMatchers(HttpMethod.POST, ADMIN_POST_URLS).hasRole(Role.ADMIN)
+                            .requestMatchers(HttpMethod.PUT, ADMIN_PUT_URLS).hasRole(Role.ADMIN)
+                            .requestMatchers(HttpMethod.DELETE, ADMIN_DELETE_URLS).hasRole(Role.ADMIN)
                             .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
