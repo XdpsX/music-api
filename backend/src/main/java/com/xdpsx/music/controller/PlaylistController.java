@@ -7,6 +7,7 @@ import com.xdpsx.music.dto.response.PlaylistResponse;
 import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.PlaylistService;
+import com.xdpsx.music.service.PlaylistTrackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class PlaylistController {
     private final UserContext userContext;
     private final PlaylistService playlistService;
+    private final PlaylistTrackService playlistTrackService;
 
     @PostMapping
     public ResponseEntity<PlaylistResponse> createPlaylist(
@@ -47,4 +49,15 @@ public class PlaylistController {
         return ResponseEntity.ok(responses);
     }
 
+    @PostMapping("/{playlistId}/add/{trackId}")
+    public ResponseEntity<Void> addTrackToPlaylist(@PathVariable Long playlistId, @PathVariable Long trackId) {
+        playlistTrackService.addTrackToPlaylist(playlistId, trackId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{playlistId}/remove/{trackId}")
+    public ResponseEntity<Void> removeTrackFromPlaylist(@PathVariable Long playlistId, @PathVariable Long trackId) {
+        playlistTrackService.removeTrackFromPlaylist(playlistId, trackId);
+        return ResponseEntity.noContent().build();
+    }
 }
