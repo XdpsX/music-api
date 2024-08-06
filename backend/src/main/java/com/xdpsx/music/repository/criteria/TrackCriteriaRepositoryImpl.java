@@ -1,6 +1,7 @@
 package com.xdpsx.music.repository.criteria;
 
 import com.xdpsx.music.model.entity.Like;
+import com.xdpsx.music.model.entity.PlaylistTrack;
 import com.xdpsx.music.model.entity.Track;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -82,6 +83,43 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
     @Override
     public Page<Track> findWithArtistFilters(Pageable pageable, String name, String sort, Long artistId) {
         return findTracks(pageable, name, null, null, artistId, sort, true);
+    }
+
+    @Override
+    public Page<Track> findTracksInPlaylist(Pageable pageable, String name, String sort, Long playlistId) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Track> cq = cb.createQuery(Track.class);
+        Root<Track> track = cq.from(Track.class);
+        Join<Track, PlaylistTrack> playlistTrack = track.join("playlists");
+
+        Predicate playlistPredicate = cb.equal(playlistTrack.get("playlist").get("id"), playlistId);
+        Predicate namePredicate = cb.conjunction();
+        if (name != null && !name.isEmpty()) {
+            namePredicate = cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%");
+        }
+        cq.where(cb.and(playlistPredicate, namePredicate));
+
+        applyBasicSorting(cb, cq, track, sort);
+
+        List<Track> tracks = entityManager.createQuery(cq)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<PlaylistTrack> countRoot = countQuery.from(PlaylistTrack.class);
+        Join<PlaylistTrack, Track> joinedTrack = countRoot.join("track");
+
+        playlistPredicate = cb.equal(countRoot.get("playlist").get("id"), playlistId);
+        namePredicate = cb.conjunction();
+        if (name != null && !name.isEmpty()) {
+            namePredicate = cb.like(cb.lower(joinedTrack.get("name")), "%" + name.toLowerCase() + "%");
+        }
+
+        countQuery.select(cb.count(countRoot)).where(cb.and(playlistPredicate, namePredicate));
+        long total = entityManager.createQuery(countQuery).getSingleResult();
+
+        return new PageImpl<>(tracks, pageable, total);
     }
 
     private Page<Track> findTracks(Pageable pageable, String name, Long albumId, Integer genreId, Long artistId, String sort, boolean withAlbum) {

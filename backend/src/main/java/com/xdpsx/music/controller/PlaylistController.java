@@ -3,11 +3,14 @@ package com.xdpsx.music.controller;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.PlaylistRequest;
 import com.xdpsx.music.dto.request.params.PlaylistParam;
+import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.PlaylistResponse;
+import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.PlaylistService;
 import com.xdpsx.music.service.PlaylistTrackService;
+import com.xdpsx.music.service.TrackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ public class PlaylistController {
     private final UserContext userContext;
     private final PlaylistService playlistService;
     private final PlaylistTrackService playlistTrackService;
+    private final TrackService trackService;
 
     @PostMapping
     public ResponseEntity<PlaylistResponse> createPlaylist(
@@ -59,5 +63,14 @@ public class PlaylistController {
     public ResponseEntity<Void> removeTrackFromPlaylist(@PathVariable Long playlistId, @PathVariable Long trackId) {
         playlistTrackService.removeTrackFromPlaylist(playlistId, trackId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{playlistId}/tracks")
+    public ResponseEntity<PageResponse<TrackResponse>> getTracksByPlaylist(
+            @PathVariable Long playlistId,
+            @Valid TrackParams params
+            ){
+        PageResponse<TrackResponse> responses = trackService.getTracksByPlaylist(playlistId, params);
+        return ResponseEntity.ok(responses);
     }
 }

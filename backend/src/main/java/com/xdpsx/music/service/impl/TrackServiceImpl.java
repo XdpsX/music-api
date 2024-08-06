@@ -7,10 +7,8 @@ import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.model.entity.*;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.TrackMapper;
-import com.xdpsx.music.repository.AlbumRepository;
-import com.xdpsx.music.repository.ArtistRepository;
-import com.xdpsx.music.repository.GenreRepository;
-import com.xdpsx.music.repository.TrackRepository;
+import com.xdpsx.music.repository.*;
+import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.util.Compare;
@@ -36,6 +34,8 @@ public class TrackServiceImpl implements TrackService {
     private final AlbumRepository albumRepository;
     private final GenreRepository genreRepository;
     private final ArtistRepository artistRepository;
+    private final PlaylistRepository playlistRepository;
+    private final UserContext userContext;
 
     @Override
     public TrackResponse createTrack(TrackRequest request, MultipartFile image, MultipartFile file) {
@@ -141,6 +141,21 @@ public class TrackServiceImpl implements TrackService {
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findLikedTracksByUserId(
                 loggedUser.getId(), pageable, params.getSearch(), params.getSort()
+        );
+        return getTrackResponses(trackPage);
+    }
+
+    @Override
+    public PageResponse<TrackResponse> getTracksByPlaylist(Long playlistId, TrackParams params) {
+        User loggedUser = userContext.getLoggedUser();
+        Playlist playlist = playlistRepository.findByIdAndOwnerId(playlistId, loggedUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("Playlist with id=%s not found", playlistId)
+                ));
+
+        Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
+        Page<Track> trackPage = trackRepository.findTracksInPlaylist(
+                pageable, params.getSearch(), params.getSort(), playlistId
         );
         return getTrackResponses(trackPage);
     }

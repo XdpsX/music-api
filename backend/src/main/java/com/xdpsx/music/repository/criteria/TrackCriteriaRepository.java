@@ -10,4 +10,5 @@ public interface TrackCriteriaRepository {
     Page<Track> findWithAlbumFilters(Pageable pageable, String name, String sort, Long albumId);
     Page<Track> findWithGenreFilters(Pageable pageable, String name, String sort, Integer genreId);
     Page<Track> findWithArtistFilters(Pageable pageable, String name, String sort, Long artistId);
+    Page<Track> findTracksInPlaylist(Pageable pageable, String name, String sort, Long playlistId);
 }

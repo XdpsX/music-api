@@ -18,4 +18,6 @@ public interface TrackService {
     PageResponse<TrackResponse> getTracksByArtistId(Long artistId, TrackParams params);
     PageResponse<TrackResponse> getTracksByAlbumId(Long albumId, TrackParams params);
     PageResponse<TrackResponse> getLikedTracks(TrackParams params, User loggedUser);
+
+    PageResponse<TrackResponse> getTracksByPlaylist(Long playlistId, TrackParams params);
 }
