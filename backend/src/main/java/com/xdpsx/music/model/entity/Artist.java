@@ -21,7 +21,8 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class Artist {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "artist_id_seq_gen")
+    @SequenceGenerator(name = "artist_id_seq_gen", sequenceName = "artists_id_seq", allocationSize = 1)
     private Long id;
 
     @Column(length = 128, nullable = false)

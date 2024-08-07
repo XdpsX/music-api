@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 @Table(name = "confirm_tokens")
 public class ConfirmToken {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "confirm_token_id_seq_gen")
+    @SequenceGenerator(name = "confirm_token_id_seq_gen", sequenceName = "confirm_tokens_id_seq", allocationSize = 1)
     private Long id;
 
     @Column(nullable = false)

@@ -7,11 +7,14 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+  flyway:
+    locations: classpath:/db/migration,classpath:/dev/db/migration
+    baseline-on-migrate: true
   mail:
     host: localhost
     port: 1025

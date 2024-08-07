@@ -17,7 +17,8 @@ import java.util.List;
 @Table(name = "albums")
 public class Album {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "album_id_seq_gen")
+    @SequenceGenerator(name = "album_id_seq_gen", sequenceName = "albums_id_seq", allocationSize = 1)
     private Long id;
 
     @Column(length = 128, nullable = false)

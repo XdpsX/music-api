@@ -19,7 +19,8 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class Track {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "track_id_seq_gen")
+    @SequenceGenerator(name = "track_id_seq_gen", sequenceName = "tracks_id_seq", allocationSize = 1)
     private Long id;
 
     @Column(length = 128, nullable = false)
