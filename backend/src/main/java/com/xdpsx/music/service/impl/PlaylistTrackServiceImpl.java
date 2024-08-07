@@ -14,7 +14,9 @@ import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.PlaylistTrackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,6 +27,7 @@ public class PlaylistTrackServiceImpl implements PlaylistTrackService {
     private final TrackRepository trackRepository;
     private final PlaylistRepository playlistRepository;
 
+    @Transactional
     @Override
     public void addTrackToPlaylist(Long playlistId, Long trackId) {
         Track track = trackRepository.findById(trackId)
@@ -52,19 +55,21 @@ public class PlaylistTrackServiceImpl implements PlaylistTrackService {
                 .trackNumber(trackNumber)
                 .build();
         playlistTrackRepository.save(playlistTrack);
+
+        playlist.setUpdatedAt(LocalDateTime.now());
+        playlistRepository.save(playlist);
     }
 
     @Override
     public void removeTrackFromPlaylist(Long playlistId, Long trackId) {
-        Track track = trackRepository.findById(trackId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format("Not found track with ID=%s", trackId)
-                ));
+        if (!trackRepository.existsById(trackId)){
+            throw new ResourceNotFoundException(String.format("Not found track with ID=%s", trackId));
+        }
         User loggedUser = userContext.getLoggedUser();
-        Playlist playlist = playlistRepository.findByIdAndOwnerId(playlistId, loggedUser.getId())
+        playlistRepository.findByIdAndOwnerId(playlistId, loggedUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format("Playlist with id=%s not found", playlistId)
-                ));
+        ));
 
         PlaylistTrackId id = new PlaylistTrackId(playlistId, trackId);
         if (!playlistTrackRepository.existsById(id)) {

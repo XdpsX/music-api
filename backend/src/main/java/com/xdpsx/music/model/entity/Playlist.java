@@ -29,7 +29,6 @@ public class Playlist {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column(insertable = false)
     private LocalDateTime updatedAt;
 
