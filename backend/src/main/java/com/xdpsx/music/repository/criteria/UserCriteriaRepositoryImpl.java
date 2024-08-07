@@ -21,14 +21,14 @@ public class UserCriteriaRepositoryImpl implements UserCriteriaRepository {
     private EntityManager entityManager;
 
     @Override
-    public Page<User> findAllWithFilters(Pageable pageable, String name, String sort,
+    public Page<User> findWithFilters(Pageable pageable, String name, String sort,
                                          Boolean accountLocked, Boolean enabled) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<User> query = cb.createQuery(User.class);
         Root<User> root = query.from(User.class);
 
-        Predicate filtersPredicate = createFiltersPredicate(cb, root, name, accountLocked, enabled);
-        query.where(filtersPredicate);
+        Predicate[] predicates = buildPredicates(cb, root, name, accountLocked, enabled);
+        query.where(predicates);
         applySorting(cb, query, root, sort);
 
         List<User> users = entityManager.createQuery(query)
@@ -36,51 +36,56 @@ public class UserCriteriaRepositoryImpl implements UserCriteriaRepository {
                 .setMaxResults(pageable.getPageSize())
                 .getResultList();
 
-        long total = getTotalCount(cb, name, accountLocked, enabled);
-        return new PageImpl<>(users, pageable, total);
+        long totalRows = getTotalRows(cb, name, accountLocked, enabled);
+        return new PageImpl<>(users, pageable, totalRows);
     }
 
-    private long getTotalCount(CriteriaBuilder cb, String name, Boolean accountLocked, Boolean enabled) {
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-        Root<User> countRoot = countQuery.from(User.class);
-
-        Predicate countPredicate = createFiltersPredicate(cb, countRoot, name, accountLocked, enabled);
-        countQuery.select(cb.count(countRoot)).where(countPredicate);
-
-        return entityManager.createQuery(countQuery).getSingleResult();
-    }
-
-    private Predicate createFiltersPredicate(CriteriaBuilder cb, Root<User> root, String name,
+    private Predicate[] buildPredicates(CriteriaBuilder cb, Root<User> user, String name,
                                              Boolean accountLocked, Boolean enabled) {
         List<Predicate> predicates = new ArrayList<>();
 
         if (name != null && !name.isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
+            predicates.add(cb.like(cb.lower(user.get("name")), "%" + name.toLowerCase() + "%"));
         }
         if (accountLocked != null) {
-            predicates.add(cb.equal(root.get("accountLocked"), accountLocked));
+            predicates.add(cb.equal(user.get("accountLocked"), accountLocked));
         }
         if (enabled != null) {
-            predicates.add(cb.equal(root.get("enabled"), enabled));
+            predicates.add(cb.equal(user.get("enabled"), enabled));
         }
 
-        return cb.and(predicates.toArray(new Predicate[0]));
+        return predicates.toArray(new Predicate[0]);
     }
 
-    private void applySorting(CriteriaBuilder cb, CriteriaQuery<User> cq, Root<User> root, String sortField) {
+    private void applySorting(CriteriaBuilder cb, CriteriaQuery<User> query, Root<User> user, String sortField) {
         if (sortField != null && !sortField.isEmpty()) {
             boolean desc = sortField.startsWith("-");
             String field = desc ? sortField.substring(1) : sortField;
 
-            Path<?> path = switch (field) {
-                case DATE_FIELD -> root.get("createdAt");
-                case NAME_FIELD -> root.get("name");
-                default -> null;
-            };
-
-            if (path != null) {
-                cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
+            switch (field) {
+                case DATE_FIELD -> {
+                    Path<?> path = user.get("createdAt");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                case NAME_FIELD -> {
+                    Path<?> path = user.get("name");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                default -> {
+                }
             }
         }
     }
+
+
+    private long getTotalRows(CriteriaBuilder cb, String name, Boolean accountLocked, Boolean enabled) {
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<User> countRoot = countQuery.from(User.class);
+
+        Predicate[] countPredicates = buildPredicates(cb, countRoot, name, accountLocked, enabled);
+        countQuery.select(cb.count(countRoot)).where(countPredicates);
+
+        return entityManager.createQuery(countQuery).getSingleResult();
+    }
+
 }

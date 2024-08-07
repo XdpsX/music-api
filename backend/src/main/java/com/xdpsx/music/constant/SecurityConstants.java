@@ -10,6 +10,7 @@ public class SecurityConstants {
             "/genres/**",
             "/albums/**",
             "/artists/**",
+            "/tracks",
             "/tracks/*"
     };
 

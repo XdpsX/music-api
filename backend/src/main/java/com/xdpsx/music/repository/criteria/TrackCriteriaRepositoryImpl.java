@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.xdpsx.music.constant.PageConstants.*;
@@ -21,21 +22,28 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
     private EntityManager entityManager;
 
     @Override
-    public Page<Track> findLikedTracksByUserId(Long userId, Pageable pageable, String name, String sort) {
+    public Page<Track> findWithFilters(Pageable pageable, String name, String sort) {
+        return findTracksWithFilters(pageable, name, sort, null, null);
+    }
+
+    @Override
+    public Page<Track> findTracksByGenre(Pageable pageable, String name, String sort, Integer genreId) {
+        return findTracksWithFilters(pageable, name, sort, genreId,null);
+    }
+
+    @Override
+    public Page<Track> findTracksByArtist(Pageable pageable, String name, String sort, Long artistId) {
+        return findTracksWithFilters(pageable, name, sort,null, artistId);
+    }
+
+    private Page<Track> findTracksWithFilters(Pageable pageable, String name, String sort,
+                                              Integer genreId, Long artistId) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Track> cq = cb.createQuery(Track.class);
         Root<Track> track = cq.from(Track.class);
-        Join<Track, Like> like = track.join("usersLiked");
 
-        Predicate userPredicate = cb.equal(like.get("user").get("id"), userId);
-        Predicate namePredicate = cb.conjunction();
-
-        if (name != null && !name.isEmpty()) {
-            namePredicate = cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%");
-        }
-
-        cq.where(cb.and(userPredicate, namePredicate));
-
+        Predicate[] filterPredicates = buildPredicates(cb, track, name, genreId, artistId);
+        cq.where(filterPredicates);
         applyBasicSorting(cb, cq, track, sort);
 
         List<Track> tracks = entityManager.createQuery(cq)
@@ -43,46 +51,135 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
                 .setMaxResults(pageable.getPageSize())
                 .getResultList();
 
-        long total = getTotalCount(cb, userId, name);
+        long totalRows = getTotalRows(cb, name, genreId, artistId);
 
-        return new PageImpl<>(tracks, pageable, total);
+        return new PageImpl<>(tracks, pageable, totalRows);
     }
 
-    private long getTotalCount(CriteriaBuilder cb, Long userId, String name) {
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-        Root<Like> countRoot = countQuery.from(Like.class);
-        Join<Like, Track> track = countRoot.join("track");
-
-        Predicate userPredicate = cb.equal(countRoot.get("user").get("id"), userId);
-        Predicate namePredicate = cb.conjunction();
+    private Predicate[] buildPredicates(CriteriaBuilder cb, Root<Track> track,
+                                        String name, Integer genreId, Long artistId) {
+        List<Predicate> predicates = new ArrayList<>();
 
         if (name != null && !name.isEmpty()) {
-            namePredicate = cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%");
+            predicates.add(cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%"));
         }
+        if (genreId != null) {
+            predicates.add(cb.equal(track.get("genre").get("id"), genreId));
+        }
+        if (artistId != null) {
+            Join<Track, ?> artists = track.join("artists");
+            predicates.add(cb.equal(artists.get("id"), artistId));
+        }
+        return predicates.toArray(new Predicate[0]);
+    }
 
-        countQuery.select(cb.count(countRoot)).where(cb.and(userPredicate, namePredicate));
+    private void applyBasicSorting(CriteriaBuilder cb, CriteriaQuery<Track> query, Root<Track> track, String sortField) {
+        if (sortField != null && !sortField.isEmpty()) {
+            boolean desc = sortField.startsWith("-");
+            String field = desc ? sortField.substring(1) : sortField;
+
+            switch (field) {
+                case TOTAL_LIKES_FIELD -> {
+                    sortByTotalLikes(cb, query, track, desc);
+                }
+                case DATE_FIELD -> {
+                    Path<?> path = track.get("createdAt");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                case NAME_FIELD -> {
+                    Path<?> path = track.get("name");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                default -> {
+                }
+            }
+        }
+    }
+
+    private void sortByTotalLikes(CriteriaBuilder cb, CriteriaQuery<Track> query, Root<Track> track, boolean desc) {
+        Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+        Root<Like> like = subquery.from(Like.class);
+        subquery.select(cb.count(like))
+                .where(cb.equal(like.get("track"), track));
+
+        query.orderBy(desc ? cb.desc(subquery) : cb.asc(subquery));
+    }
+
+    private long getTotalRows(CriteriaBuilder cb, String name, Integer genreId, Long artistId) {
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Track> countRoot = countQuery.from(Track.class);
+
+        Predicate[] countPredicates = buildPredicates(cb, countRoot, name, genreId, artistId);
+        countQuery.select(cb.count(countRoot)).where(countPredicates);
 
         return entityManager.createQuery(countQuery).getSingleResult();
     }
 
     @Override
-    public Page<Track> findWithFilters(Pageable pageable, String name, String sort) {
-        return findTracks(pageable, name, null, null, null, sort, false);
+    public Page<Track> findTracksByAlbum(Pageable pageable, String name, String sort, Long albumId) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Track> cq = cb.createQuery(Track.class);
+        Root<Track> track = cq.from(Track.class);
+
+        Predicate[] filtersPredicates = buildPredicates(cb, track, name, albumId);
+        cq.where(filtersPredicates);
+        applySortingAlbumTracks(cb, cq, track, sort);
+
+        List<Track> tracks = entityManager.createQuery(cq)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        long total = getTotalRows(cb, name, albumId);
+
+        return new PageImpl<>(tracks, pageable, total);
     }
 
-    @Override
-    public Page<Track> findWithAlbumFilters(Pageable pageable, String name, String sort, Long albumId) {
-        return findTracksWithAlbumSorting(pageable, name, albumId, sort);
+    private Predicate[] buildPredicates(CriteriaBuilder cb, Root<Track> track, String name, Long albumId) {
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (name != null && !name.isEmpty()) {
+            predicates.add(cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%"));
+        }
+        if (albumId == null) {
+            predicates.add(cb.isNull(track.get("album")));
+        }else {
+            predicates.add(cb.equal(track.get("album").get("id"), albumId));
+        }
+        return predicates.toArray(new Predicate[0]);
     }
 
-    @Override
-    public Page<Track> findWithGenreFilters(Pageable pageable, String name, String sort, Integer genreId) {
-        return findTracks(pageable, name, null, genreId, null, sort, true);
+    private void applySortingAlbumTracks(CriteriaBuilder cb, CriteriaQuery<Track> query, Root<Track> track, String sortField) {
+        if (sortField != null && !sortField.isEmpty()) {
+            boolean desc = sortField.startsWith("-");
+            String field = desc ? sortField.substring(1) : sortField;
+
+            switch (field) {
+                case TOTAL_LIKES_FIELD -> {
+                    sortByTotalLikes(cb, query, track, desc);
+                }
+                case DATE_FIELD -> {
+                    Path<?> path = track.get("trackNumber");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                case NAME_FIELD -> {
+                    Path<?> path = track.get("name");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                default -> {
+                }
+            }
+        }
     }
 
-    @Override
-    public Page<Track> findWithArtistFilters(Pageable pageable, String name, String sort, Long artistId) {
-        return findTracks(pageable, name, null, null, artistId, sort, true);
+    private long getTotalRows(CriteriaBuilder cb, String name, Long albumId) {
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Track> countRoot = countQuery.from(Track.class);
+
+        Predicate[] countPredicates = buildPredicates(cb, countRoot, name, albumId);
+        countQuery.select(cb.count(countRoot)).where(countPredicates);
+
+        return entityManager.createQuery(countQuery).getSingleResult();
     }
 
     @Override
@@ -122,13 +219,22 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
         return new PageImpl<>(tracks, pageable, total);
     }
 
-    private Page<Track> findTracks(Pageable pageable, String name, Long albumId, Integer genreId, Long artistId, String sort, boolean withAlbum) {
+    @Override
+    public Page<Track> findFavoriteTracksByUserId(Pageable pageable, String name, String sort, Long userId) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Track> cq = cb.createQuery(Track.class);
         Root<Track> track = cq.from(Track.class);
+        Join<Track, Like> like = track.join("usersLiked");
 
-        Predicate filtersPredicate = createFiltersPredicate(cb, track, name, albumId, genreId, artistId, withAlbum);
-        cq.where(filtersPredicate);
+        Predicate userPredicate = cb.equal(like.get("user").get("id"), userId);
+        Predicate namePredicate = cb.conjunction();
+
+        if (name != null && !name.isEmpty()) {
+            namePredicate = cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%");
+        }
+
+        cq.where(cb.and(userPredicate, namePredicate));
+
         applyBasicSorting(cb, cq, track, sort);
 
         List<Track> tracks = entityManager.createQuery(cq)
@@ -136,108 +242,26 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
                 .setMaxResults(pageable.getPageSize())
                 .getResultList();
 
-        long total = getTotalCount(cb, name, albumId, genreId, artistId, withAlbum);
+        long totalRows = getTotalRows(cb, userId, name);
 
-        return new PageImpl<>(tracks, pageable, total);
+        return new PageImpl<>(tracks, pageable, totalRows);
     }
 
-    private Page<Track> findTracksWithAlbumSorting(Pageable pageable, String name, Long albumId, String sort) {
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Track> cq = cb.createQuery(Track.class);
-        Root<Track> track = cq.from(Track.class);
+    private long getTotalRows(CriteriaBuilder cb, Long userId, String name) {
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Like> countRoot = countQuery.from(Like.class);
+        Join<Like, Track> track = countRoot.join("track");
 
-        Predicate filtersPredicate = createFiltersPredicate(cb, track, name, albumId, null, null, true);
-        cq.where(filtersPredicate);
-        applyAlbumSorting(cb, cq, track, sort);
-
-        List<Track> tracks = entityManager.createQuery(cq)
-                .setFirstResult((int) pageable.getOffset())
-                .setMaxResults(pageable.getPageSize())
-                .getResultList();
-
-        long total = getTotalCount(cb, name, albumId, null, null, true);
-
-        return new PageImpl<>(tracks, pageable, total);
-    }
-
-    private Predicate createFiltersPredicate(CriteriaBuilder cb, Root<Track> track, String name, Long albumId, Integer genreId, Long artistId, boolean withAlbum) {
-        Predicate predicate = cb.conjunction();
+        Predicate userPredicate = cb.equal(countRoot.get("user").get("id"), userId);
+        Predicate namePredicate = cb.conjunction();
 
         if (name != null && !name.isEmpty()) {
-            predicate = cb.and(predicate, cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%"));
+            namePredicate = cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%");
         }
-        if (withAlbum) {
-            predicate = cb.and(predicate, albumId == null ? cb.isNull(track.get("album")) : cb.equal(track.get("album").get("id"), albumId));
-        }
-        if (genreId != null) {
-            predicate = cb.and(predicate, cb.equal(track.get("genre").get("id"), genreId));
-        }
-        if (artistId != null) {
-            Join<Track, ?> artists = track.join("artists");
-            predicate = cb.and(predicate, cb.equal(artists.get("id"), artistId));
-        }
-        return predicate;
-    }
 
-    private void applyBasicSorting(CriteriaBuilder cb, CriteriaQuery<Track> cq, Root<Track> track, String sortField) {
-        if (sortField != null && !sortField.isEmpty()) {
-            boolean desc = sortField.startsWith("-");
-            String field = desc ? sortField.substring(1) : sortField;
-
-            if (TOTAL_LIKES_FIELD.equals(field)) {
-                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-                Root<Like> like = subquery.from(Like.class);
-                subquery.select(cb.count(like))
-                        .where(cb.equal(like.get("track"), track));
-
-                cq.orderBy(desc ? cb.desc(subquery) : cb.asc(subquery));
-            } else {
-                Path<?> path = switch (field) {
-                    case DATE_FIELD -> track.get("createdAt");
-                    case NAME_FIELD -> track.get("name");
-                    default -> null;
-                };
-
-                if (path != null) {
-                    cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
-                }
-            }
-        }
-    }
-
-    private void applyAlbumSorting(CriteriaBuilder cb, CriteriaQuery<Track> cq, Root<Track> track, String sortField) {
-        if (sortField != null && !sortField.isEmpty()) {
-            boolean desc = sortField.startsWith("-");
-            String field = desc ? sortField.substring(1) : sortField;
-
-            if (TOTAL_LIKES_FIELD.equals(field)) {
-                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-                Root<Like> like = subquery.from(Like.class);
-                subquery.select(cb.count(like))
-                        .where(cb.equal(like.get("track"), track));
-
-                cq.orderBy(desc ? cb.desc(subquery) : cb.asc(subquery));
-            } else {
-                Path<?> path = switch (field) {
-                    case DATE_FIELD -> track.get("trackNumber");
-                    case NAME_FIELD -> track.get("name");
-                    default -> null;
-                };
-
-                if (path != null) {
-                    cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
-                }
-            }
-        }
-    }
-
-    private long getTotalCount(CriteriaBuilder cb, String name, Long albumId, Integer genreId, Long artistId, boolean withAlbum) {
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-        Root<Track> countRoot = countQuery.from(Track.class);
-
-        Predicate countPredicate = createFiltersPredicate(cb, countRoot, name, albumId, genreId, artistId, withAlbum);
-        countQuery.select(cb.count(countRoot)).where(countPredicate);
+        countQuery.select(cb.count(countRoot)).where(cb.and(userPredicate, namePredicate));
 
         return entityManager.createQuery(countQuery).getSingleResult();
     }
+
 }

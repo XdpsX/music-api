@@ -113,7 +113,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public PageResponse<UserResponse> getAllUsers(UserParams params) {
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
-        Page<User> userPage = userRepository.findAllWithFilters(
+        Page<User> userPage = userRepository.findWithFilters(
                 pageable, params.getSearch(), params.getSort(), params.getAccountLocked(), params.getEnabled()
         );
         List<UserResponse> responses = userPage.getContent().stream()

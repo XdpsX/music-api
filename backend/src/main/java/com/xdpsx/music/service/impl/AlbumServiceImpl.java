@@ -101,7 +101,7 @@ public class AlbumServiceImpl implements AlbumService {
     @Override
     public PageResponse<AlbumResponse> getAllAlbums(AlbumParams params) {
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
-        Page<Album> albumPage = albumRepository.findAlbumsWithFilters(
+        Page<Album> albumPage = albumRepository.findWithFilters(
                 pageable, params.getSearch(), params.getSort()
         );
         return getAlbumResponses(albumPage);
@@ -119,7 +119,7 @@ public class AlbumServiceImpl implements AlbumService {
         Genre genre = fetchGenreById(genreId);
 
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
-        Page<Album> albumPage = albumRepository.findAlbumsWithGenreFilters(
+        Page<Album> albumPage = albumRepository.findAlbumsByGenre(
                 pageable, params.getSearch(), params.getSort(), genre.getId()
         );
         return getAlbumResponses(albumPage);
@@ -135,7 +135,7 @@ public class AlbumServiceImpl implements AlbumService {
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
-        Page<Album> albumPage = albumRepository.findAlbumsWithArtistFilters(
+        Page<Album> albumPage = albumRepository.findAlbumsByArtist(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
         );
         return getAlbumResponses(albumPage);

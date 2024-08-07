@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface UserCriteriaRepository {
-    Page<User> findAllWithFilters(
+    Page<User> findWithFilters(
             Pageable pageable,
             String name,
             String sort,

@@ -1,6 +1,5 @@
 package com.xdpsx.music.repository.criteria;
 
-import com.xdpsx.music.model.entity.Like;
 import com.xdpsx.music.model.entity.Playlist;
 import com.xdpsx.music.model.entity.PlaylistTrack;
 import jakarta.persistence.EntityManager;
@@ -28,32 +27,32 @@ public class PlaylistCriteriaRepositoryImpl implements PlaylistCriteriaRepositor
         CriteriaQuery<Playlist> cq = cb.createQuery(Playlist.class);
         Root<Playlist> root = cq.from(Playlist.class);
 
-        Predicate predicate = createFiltersPredicate(cb, root, name, ownerId);
-        cq.where(predicate);
+        Predicate[] predicates = buildPredicates(cb, root, name, ownerId);
+        cq.where(predicates);
         applySorting(cb, cq, root, sortField);
 
         List<Playlist> playlists = entityManager.createQuery(cq)
                 .setFirstResult((int) pageable.getOffset())
                 .setMaxResults(pageable.getPageSize())
                 .getResultList();
-        long total = getTotalCount(cb, name, ownerId);
-        return new PageImpl<>(playlists, pageable, total);
+        long totalRows = getTotalRows(cb, name, ownerId);
+        return new PageImpl<>(playlists, pageable, totalRows);
     }
 
-    private Predicate createFiltersPredicate(CriteriaBuilder cb, Root<Playlist> root, String name, Long ownerId) {
+    private Predicate[] buildPredicates(CriteriaBuilder cb, Root<Playlist> playlist, String name, Long ownerId) {
         List<Predicate> predicates = new ArrayList<>();
 
         if (name != null && !name.isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
+            predicates.add(cb.like(cb.lower(playlist.get("name")), "%" + name.toLowerCase() + "%"));
         }
         if (ownerId != null) {
-            predicates.add(cb.equal(root.get("owner").get("id"), ownerId));
+            predicates.add(cb.equal(playlist.get("owner").get("id"), ownerId));
         }
 
-        return cb.and(predicates.toArray(new Predicate[0]));
+        return predicates.toArray(new Predicate[0]);
     }
 
-    private void applySorting(CriteriaBuilder cb, CriteriaQuery<Playlist> cq, Root<Playlist> root, String sortField) {
+    private void applySorting(CriteriaBuilder cb, CriteriaQuery<Playlist> query, Root<Playlist> playlist, String sortField) {
         if (sortField != null && !sortField.isEmpty()) {
             boolean desc = sortField.startsWith("-");
             String field = desc ? sortField.substring(1) : sortField;
@@ -61,21 +60,21 @@ public class PlaylistCriteriaRepositoryImpl implements PlaylistCriteriaRepositor
             switch (field) {
                 case TOTAL_TRACKS_FIELD -> {
                     Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-                    Root<PlaylistTrack> playlistTrackRoot = subquery.from(PlaylistTrack.class);
-                    subquery.select(cb.count(playlistTrackRoot))
-                            .where(cb.equal(playlistTrackRoot.get("playlist"), root));
+                    Root<PlaylistTrack> playlistTrack = subquery.from(PlaylistTrack.class);
+                    subquery.select(cb.count(playlistTrack))
+                            .where(cb.equal(playlistTrack.get("playlist"), playlist));
 
-                    cq.orderBy(desc ? cb.desc(subquery) : cb.asc(subquery));
+                    query.orderBy(desc ? cb.desc(subquery) : cb.asc(subquery));
                 }
                 case DATE_FIELD -> {
-                    Path<LocalDateTime> updatedAtPath = root.get("updatedAt");
-                    Path<LocalDateTime> createdAtPath = root.get("createdAt");
+                    Path<LocalDateTime> updatedAtPath = playlist.get("updatedAt");
+                    Path<LocalDateTime> createdAtPath = playlist.get("createdAt");
                     Expression<LocalDateTime> dateExpression = cb.coalesce(updatedAtPath, createdAtPath);
-                    cq.orderBy(desc ? cb.desc(dateExpression) : cb.asc(dateExpression));
+                    query.orderBy(desc ? cb.desc(dateExpression) : cb.asc(dateExpression));
                 }
                 case NAME_FIELD -> {
-                    Path<?> path = root.get("name");
-                    cq.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                    Path<?> path = playlist.get("name");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
                 }
                 default -> {
                 }
@@ -83,12 +82,12 @@ public class PlaylistCriteriaRepositoryImpl implements PlaylistCriteriaRepositor
         }
     }
 
-    private long getTotalCount(CriteriaBuilder cb, String name, Long ownerId) {
+    private long getTotalRows(CriteriaBuilder cb, String name, Long ownerId) {
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<Playlist> countRoot = countQuery.from(Playlist.class);
 
-        Predicate countPredicate = createFiltersPredicate(cb, countRoot, name, ownerId);
-        countQuery.select(cb.count(countRoot)).where(countPredicate);
+        Predicate[] countPredicates = buildPredicates(cb, countRoot, name, ownerId);
+        countQuery.select(cb.count(countRoot)).where(countPredicates);
 
         return entityManager.createQuery(countQuery).getSingleResult();
     }

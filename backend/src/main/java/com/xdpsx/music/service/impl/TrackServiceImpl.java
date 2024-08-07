@@ -107,7 +107,7 @@ public class TrackServiceImpl implements TrackService {
     public PageResponse<TrackResponse> getTracksByGenreId(Integer genreId, TrackParams params) {
         Genre genre = getGenre(genreId);
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
-        Page<Track> trackPage = trackRepository.findWithGenreFilters(
+        Page<Track> trackPage = trackRepository.findTracksByGenre(
                 pageable, params.getSearch(), params.getSort(), genre.getId()
         );
         return getTrackResponses(trackPage);
@@ -119,7 +119,7 @@ public class TrackServiceImpl implements TrackService {
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
 
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
-        Page<Track> trackPage = trackRepository.findWithArtistFilters(
+        Page<Track> trackPage = trackRepository.findTracksByArtist(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
         );
         return getTrackResponses(trackPage);
@@ -130,7 +130,7 @@ public class TrackServiceImpl implements TrackService {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", albumId)));
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
-        Page<Track> trackPage = trackRepository.findWithAlbumFilters(
+        Page<Track> trackPage = trackRepository.findTracksByAlbum(
                 pageable, params.getSearch(), params.getSort(), album.getId()
         );
         return getTrackResponses(trackPage);
@@ -139,8 +139,8 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public PageResponse<TrackResponse> getLikedTracks(TrackParams params, User loggedUser) {
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
-        Page<Track> trackPage = trackRepository.findLikedTracksByUserId(
-                loggedUser.getId(), pageable, params.getSearch(), params.getSort()
+        Page<Track> trackPage = trackRepository.findFavoriteTracksByUserId(
+                pageable, params.getSearch(), params.getSort(), loggedUser.getId()
         );
         return getTrackResponses(trackPage);
     }

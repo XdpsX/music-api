@@ -10,7 +10,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,67 +23,65 @@ public class ArtistCriteriaRepositoryImpl implements ArtistCriteriaRepository {
     @Override
     public Page<Artist> findWithFilters(Pageable pageable, String name, String sort, Gender gender) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+
+        // Main query
         CriteriaQuery<Artist> query = cb.createQuery(Artist.class);
         Root<Artist> root = query.from(Artist.class);
 
-        // Predicates for filters
-        List<Predicate> predicates = buildPredicates(cb, root, name, gender);
-        query.where(predicates.toArray(new Predicate[0]));
+        Predicate[] predicates = buildPredicates(cb, root, name, gender);
+        query.where(predicates);
 
-        // Sorting
-        if (sort != null) {
-            query.orderBy(getSortOrder(sort, cb, root));
-        }
+        applySorting(cb, query, root, sort);
 
-        // Execute main query
         List<Artist> artists = entityManager.createQuery(query)
                 .setFirstResult((int) pageable.getOffset())
                 .setMaxResults(pageable.getPageSize())
                 .getResultList();
 
-        // Create a new count query
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-        Root<Artist> countRoot = countQuery.from(Artist.class); // New Root for count query
-
-        // Predicates for the count query
-        List<Predicate> countPredicates =  buildPredicates(cb, countRoot, name, gender);
-        countQuery.select(cb.count(countRoot)).where(countPredicates.toArray(new Predicate[0]));
-
-        // Execute the count query
-        Long totalRows = entityManager.createQuery(countQuery).getSingleResult();
-
+        // Count query
+        Long totalRows = getTotalRows(name, gender, cb);
         return new PageImpl<>(artists, pageable, totalRows);
     }
 
-    private List<Predicate> buildPredicates(CriteriaBuilder cb, Root<Artist> root, String name, Gender gender) {
+    private Predicate[] buildPredicates(CriteriaBuilder cb, Root<Artist> artist, String name, Gender gender) {
         List<Predicate> predicates = new ArrayList<>();
         if (name != null && !name.isEmpty()) {
-            predicates.add(cb.like(root.get("name"), "%" + name + "%"));
+            predicates.add(cb.like(artist.get("name"), "%" + name + "%"));
         }
         if (gender != null) {
-            predicates.add(cb.equal(root.get("gender"), gender.name()));
+            predicates.add(cb.equal(artist.get("gender"), gender.name()));
         }
-        return predicates;
+        return predicates.toArray(new Predicate[0]);
     }
 
-    private Long countArtists(CriteriaBuilder cb, List<Predicate> predicates) {
+    private void applySorting(CriteriaBuilder cb, CriteriaQuery<Artist> query, Root<Artist> artist, String sortField) {
+        if (sortField != null && !sortField.isEmpty()) {
+            boolean desc = sortField.startsWith("-");
+            String field = desc ? sortField.substring(1) : sortField;
+
+            switch (field) {
+                case DATE_FIELD -> {
+                    Path<?> path = artist.get("createdAt");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                case NAME_FIELD -> {
+                    Path<?> path = artist.get("name");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                default -> {
+                }
+            }
+        }
+    }
+
+    private Long getTotalRows(String name, Gender gender, CriteriaBuilder cb) {
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<Artist> countRoot = countQuery.from(Artist.class);
-        countQuery.select(cb.count(countRoot)).where(predicates.toArray(new Predicate[0]));
-        return entityManager.createQuery(countQuery).getSingleResult();
+        Predicate[] countPredicates =  buildPredicates(cb, countRoot, name, gender);
+        countQuery.select(cb.count(countRoot)).where(countPredicates);
+
+        Long totalRows = entityManager.createQuery(countQuery).getSingleResult();
+        return totalRows;
     }
 
-    private Order getSortOrder(String sortField, CriteriaBuilder cb, Root root) {
-        String actualField = sortField;
-        if (sortField.startsWith("-")){
-            actualField = sortField.substring(1);
-        }
-
-        if (actualField.equalsIgnoreCase(NAME_FIELD)) {
-            return sortField.startsWith("-") ? cb.desc(root.get(actualField)) : cb.asc(root.get(actualField));
-        }else {
-            Expression<LocalDateTime> expression = root.get("createdAt");
-            return sortField.startsWith("-") ? cb.desc(expression) : cb.asc(expression);
-        }
-    }
 }
