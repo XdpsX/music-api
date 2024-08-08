@@ -22,9 +22,4 @@ public interface ConfirmTokenRepository extends CrudRepository<ConfirmToken, Lon
             @Param("endOfDay") LocalDateTime endOfDay
     );
 
-    @Query("""
-            select ct from ConfirmToken ct inner join User u on ct.user.id = u.id
-            where u.id = :userId and ct.revoked = false
-            """)
-    List<ConfirmToken> findAllValidTokensByUser(Long userId);
 }

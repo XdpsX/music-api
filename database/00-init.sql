@@ -176,3 +176,11 @@ CREATE TRIGGER update_tokens_on_account_lock
 AFTER UPDATE OF account_locked ON users
 FOR EACH ROW
 EXECUTE FUNCTION revoke_tokens_on_account_lock();
+
+-- INDEXES
+CREATE INDEX idx_tokens_access_token ON tokens (access_token);
+CREATE INDEX idx_tokens_refresh_token ON tokens (refresh_token);
+
+CREATE INDEX idx_tracks_name ON tracks (name);
+CREATE INDEX idx_tracks_genre_id_name ON tracks (genre_id, name);
+CREATE INDEX idx_tracks_album_id_name ON tracks (album_id, name);
