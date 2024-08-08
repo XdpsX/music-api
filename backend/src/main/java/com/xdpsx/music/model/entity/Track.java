@@ -41,8 +41,9 @@ public class Track {
     )
     private LocalDateTime createdAt;
 
-    @Column
     private Integer trackNumber;
+
+    private int listeningCount;
 
     @ManyToOne
     @JoinColumn(name="album_id", referencedColumnName = "id")

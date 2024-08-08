@@ -160,6 +160,13 @@ public class TrackServiceImpl implements TrackService {
         return getTrackResponses(trackPage);
     }
 
+    @Override
+    public void incrementListeningCount(Long trackId, User loggedUser) {
+        Track track = getTrack(trackId);
+        track.setListeningCount(track.getListeningCount() + 1);
+        trackRepository.save(track);
+    }
+
     private TrackResponse mapToResponse(Track track){
         TrackResponse response = trackMapper.fromEntityToResponse(track);
         long totalLikes = trackRepository.countLikesByTrackId(track.getId());

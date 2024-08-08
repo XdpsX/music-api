@@ -90,4 +90,11 @@ public class TrackController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
+
+    @PostMapping("/{trackId}/listen")
+    public ResponseEntity<?> incrementListeningCount(@PathVariable Long trackId) {
+        User loggedUser = userContext.getLoggedUser();
+        trackService.incrementListeningCount(trackId, loggedUser);
+        return ResponseEntity.ok().build();
+    }
 }
