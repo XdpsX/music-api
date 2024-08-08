@@ -11,9 +11,7 @@ import com.xdpsx.music.model.entity.Role;
 import com.xdpsx.music.model.entity.Token;
 import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.model.enums.EmailTemplateName;
-import com.xdpsx.music.repository.ConfirmTokenRepository;
 import com.xdpsx.music.repository.RoleRepository;
-import com.xdpsx.music.repository.TokenRepository;
 import com.xdpsx.music.repository.UserRepository;
 import com.xdpsx.music.security.JwtProvider;
 import com.xdpsx.music.service.AuthService;
@@ -42,13 +40,10 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-    private final ConfirmTokenRepository confirmTokenRepository;
     private final TokenService tokenService;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtProvider jwtProvider;
-    private final TokenRepository tokenRepository;
-
 
     @Value("${app.mail.frontend.activation-url}")
     private String activationUrl;
@@ -84,7 +79,6 @@ public class AuthServiceImpl implements AuthService {
             throw new TooManyRequestsException(
                     String.format("You can send request %s times per day", NUM_EMAILS_PER_DAY));
         }
-        tokenService.revokeAllConfirmTokens(user);
         String activeCode = tokenService.generateAndSaveConfirmToken(user, CODE_VALID_TIME);
 
         Map<String, Object> properties = new HashMap<>();
@@ -103,8 +97,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     @Override
     public TokenResponse activateAccount(String activeCode) {
-        var confirmToken = confirmTokenRepository.findByCode(activeCode)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found active code %s", activeCode)));
+        var confirmToken = tokenService.findConfirmTokenByCode(activeCode);
         if (LocalDateTime.now().isAfter(confirmToken.getExpiredAt())
                 || confirmToken.isRevoked()
                 || confirmToken.getValidatedAt() != null) {
@@ -117,8 +110,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEnabled(true);
         var savedUser = userRepository.save(user);
 
-        confirmToken.setValidatedAt(LocalDateTime.now());
-        confirmTokenRepository.save(confirmToken);
+        tokenService.validatesConfirmToken(confirmToken);
 
         Token jwt = tokenService.createJwtToken(savedUser);
         return TokenResponse.builder()
@@ -138,7 +130,6 @@ public class AuthServiceImpl implements AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
         User user = (User) authentication.getPrincipal();
-        tokenService.revokeAllJwtTokens(user);
         Token jwt = tokenService.createJwtToken(user);
         return TokenResponse.builder()
                 .accessToken(jwt.getAccessToken())
@@ -157,10 +148,8 @@ public class AuthServiceImpl implements AuthService {
             User user = userRepository.findByEmail(userEmail)
                     .orElse(null);
             if (user != null && jwtProvider.isTokenValid(refreshToken, user)){
-                Token token = tokenRepository.findByRefreshToken(refreshToken)
-                        .orElse(null);
+                Token token = tokenService.findTokenByRefreshToken(refreshToken);
                 if (token != null && !token.isRevoked()){
-                    tokenService.revokeAllJwtTokens(user);
                     Token jwt = tokenService.createJwtToken(user);
                     return TokenResponse.builder()
                             .accessToken(jwt.getAccessToken())
@@ -190,8 +179,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     @Override
     public void resetPassword(ResetPasswordRequest request) {
-        var confirmToken = confirmTokenRepository.findByCode(request.getResetCode())
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found active code %s", request.getResetCode())));
+        ConfirmToken confirmToken = tokenService.findConfirmTokenByCode(request.getResetCode());
         if (LocalDateTime.now().isAfter(confirmToken.getExpiredAt())
                 || confirmToken.isRevoked()
                 || confirmToken.getValidatedAt() != null) {
@@ -201,8 +189,7 @@ public class AuthServiceImpl implements AuthService {
         userToUpdate.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(userToUpdate);
 
-        confirmToken.setValidatedAt(LocalDateTime.now());
-        confirmTokenRepository.save(confirmToken);
+        tokenService.validatesConfirmToken(confirmToken);
     }
 
     private void sendResetPasswordEmail(User user) throws MessagingException {
@@ -211,7 +198,7 @@ public class AuthServiceImpl implements AuthService {
             throw new TooManyRequestsException(
                     String.format("You can send request %s times per day", NUM_EMAILS_PER_DAY));
         }
-        tokenService.revokeAllConfirmTokens(user);
+
         String resetCode = tokenService.generateAndSaveConfirmToken(user, CODE_VALID_TIME);
         Map<String, Object> properties = new HashMap<>();
         properties.put("username", user.getName());

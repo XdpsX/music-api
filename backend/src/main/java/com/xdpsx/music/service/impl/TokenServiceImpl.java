@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.model.entity.ConfirmToken;
 import com.xdpsx.music.model.entity.Token;
 import com.xdpsx.music.model.entity.User;
@@ -39,16 +40,17 @@ public class TokenServiceImpl implements TokenService {
         return generatedCode;
     }
 
-    // TODO Try using trigger in db or schedule in spring later
     @Override
-    public void revokeAllConfirmTokens(User user){
-        var validTokens = confirmTokenRepository.findAllValidTokensByUser(user.getId());
-        if (validTokens.isEmpty())
-            return;
-        validTokens.forEach(t -> {
-            t.setRevoked(true);
-        });
-        confirmTokenRepository.saveAll(validTokens);
+    public ConfirmToken findConfirmTokenByCode(String code) {
+        return confirmTokenRepository.findByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found active code %s", code)));
+    }
+
+    @Override
+    public void validatesConfirmToken(ConfirmToken confirmToken) {
+        confirmToken.setValidatedAt(LocalDateTime.now());
+        confirmToken.setRevoked(true);
+        confirmTokenRepository.save(confirmToken);
     }
 
     private String generateCode() {
@@ -82,18 +84,6 @@ public class TokenServiceImpl implements TokenService {
         return tokenRepository.save(token);
     }
 
-    // TODO Try using trigger in db or schedule in spring later
-    @Override
-    public void revokeAllJwtTokens(User user){
-        var validUserTokens = tokenRepository.findAllValidTokensByUser(user.getId());
-        if (validUserTokens.isEmpty())
-            return;
-        validUserTokens.forEach(t -> {
-            t.setRevoked(true);
-        });
-        tokenRepository.saveAll(validUserTokens);
-    }
-
     @Async
     @Override
     public void revokeTokenByAccessToken(String accessToken){
@@ -103,5 +93,11 @@ public class TokenServiceImpl implements TokenService {
             token.setRevoked(true);
             tokenRepository.save(token);
         }
+    }
+
+    @Override
+    public Token findTokenByRefreshToken(String refreshToken) {
+        return tokenRepository.findByRefreshToken(refreshToken)
+                .orElse(null);
     }
 }

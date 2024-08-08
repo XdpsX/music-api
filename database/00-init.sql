@@ -1,3 +1,4 @@
+-- TABLES
 -- Table: genres
 CREATE TABLE IF NOT EXISTS genres (
     id SERIAL PRIMARY KEY,
@@ -117,7 +118,61 @@ CREATE TABLE IF NOT EXISTS artist_tracks (
     PRIMARY KEY (artist_id, track_id)
 );
 
+-- Add roles Data
 INSERT INTO roles (name)
 VALUES 
 ('ADMIN'), 
 ('USER');
+
+-- TRIGGERS
+-- When user creates new confirm token, set revoked of old confirm tokens = true
+CREATE OR REPLACE FUNCTION revoke_old_confirm_tokens()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE confirm_tokens
+    SET revoked = true
+    WHERE user_id = NEW.user_id;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_insert_confirm_token
+BEFORE INSERT ON confirm_tokens
+FOR EACH ROW
+EXECUTE FUNCTION revoke_old_confirm_tokens();
+
+-- When user creates new token, set revoked of old tokens = true
+CREATE OR REPLACE FUNCTION revoke_old_tokens()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE tokens
+    SET revoked = true
+    WHERE user_id = NEW.user_id;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_insert_token
+BEFORE INSERT ON tokens
+FOR EACH ROW
+EXECUTE FUNCTION revoke_old_tokens();
+
+-- When user is locked, the user's tokens must be revoked
+CREATE OR REPLACE FUNCTION revoke_tokens_on_account_lock()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.account_locked = TRUE THEN
+        UPDATE tokens
+        SET revoked = TRUE
+        WHERE user_id = NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_tokens_on_account_lock
+AFTER UPDATE OF account_locked ON users
+FOR EACH ROW
+EXECUTE FUNCTION revoke_tokens_on_account_lock();

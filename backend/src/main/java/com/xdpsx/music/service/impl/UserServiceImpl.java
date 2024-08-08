@@ -12,7 +12,6 @@ import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.UserMapper;
 import com.xdpsx.music.repository.UserRepository;
 import com.xdpsx.music.service.FileService;
-import com.xdpsx.music.service.TokenService;
 import com.xdpsx.music.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,7 +34,6 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final FileService fileService;
-    private final TokenService tokenService;
 
     @Override
     public void changePassword(ChangePasswordRequest request, User loggedUser) {
@@ -84,7 +82,6 @@ public class UserServiceImpl implements UserService {
         if (!user.isAccountLocked()){
             user.setAccountLocked(true);
             userRepository.save(user);
-            tokenService.revokeAllJwtTokens(user);
         }
     }
 
