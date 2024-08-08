@@ -7,6 +7,7 @@ import com.xdpsx.music.exception.BadRequestException;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.GenreMapper;
 import com.xdpsx.music.repository.GenreRepository;
+import com.xdpsx.music.service.CacheService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.service.GenreService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.xdpsx.music.constant.FileConstants.GENRES_IMG_FOLDER;
+import static com.xdpsx.music.util.KeyGenerator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class GenreServiceImpl implements GenreService {
     private final GenreMapper genreMapper;
     private final FileService fileService;
     private final GenreRepository genreRepository;
+    private final CacheService cacheService;
 
     @Override
     public GenreResponse createGenre(GenreRequest request, MultipartFile image) {
@@ -51,5 +54,10 @@ public class GenreServiceImpl implements GenreService {
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found genre with ID=%s", genreId)));
         fileService.deleteFileByUrl(genre.getImage());
         genreRepository.delete(genre);
+
+        cacheService.deleteKeysByPrefix(getAlbumsKey());
+        cacheService.deleteKeysByPrefix(getGenreAlbumsKey(genreId));
+        cacheService.deleteKeysByPrefix(getTracksKey());
+        cacheService.deleteKeysByPrefix(getGenreTracksKey(genreId));
     }
 }

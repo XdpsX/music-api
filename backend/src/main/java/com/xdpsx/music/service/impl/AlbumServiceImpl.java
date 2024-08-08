@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.params.AlbumParams;
 import com.xdpsx.music.dto.request.AlbumRequest;
@@ -14,6 +15,7 @@ import com.xdpsx.music.repository.ArtistRepository;
 import com.xdpsx.music.repository.GenreRepository;
 import com.xdpsx.music.repository.TrackRepository;
 import com.xdpsx.music.service.AlbumService;
+import com.xdpsx.music.service.CacheService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.util.Compare;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.xdpsx.music.constant.FileConstants.ALBUMS_IMG_FOLDER;
+import static com.xdpsx.music.util.KeyGenerator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +40,7 @@ public class AlbumServiceImpl implements AlbumService {
     private final GenreRepository genreRepository;
     private final ArtistRepository artistRepository;
     private final TrackRepository trackRepository;
+    private final CacheService cacheService;
 
     @Override
     public AlbumResponse createAlbum(AlbumRequest request, MultipartFile image) {
@@ -57,6 +61,7 @@ public class AlbumServiceImpl implements AlbumService {
         album.setArtists(artists);
 
         Album savedAlbum = albumRepository.save(album);
+        cacheService.deleteKeysByPrefix(getAlbumsKey());
         return albumMapper.fromEntityToResponse(savedAlbum);
     }
 
@@ -89,6 +94,10 @@ public class AlbumServiceImpl implements AlbumService {
         if (oldImage != null){
             fileService.deleteFileByUrl(oldImage);
         }
+
+        cacheService.deleteKeysByPrefix(getAlbumsKey());
+        cacheService.deleteKeysByPrefix(getTracksKey());
+        cacheService.deleteKeysByPrefix(getAlbumTracksKey(id));
         return this.mapToResponse(updatedAlbum);
     }
 
@@ -100,11 +109,17 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Override
     public PageResponse<AlbumResponse> getAllAlbums(AlbumParams params) {
+        PageResponse<AlbumResponse> cacheData = cacheService.getValue(getAlbumsKey(params), new TypeReference<>() {});
+        if (cacheData != null){
+            return cacheData;
+        }
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Album> albumPage = albumRepository.findWithFilters(
                 pageable, params.getSearch(), params.getSort()
         );
-        return getAlbumResponses(albumPage);
+        PageResponse<AlbumResponse> result = getAlbumResponses(albumPage);
+        cacheService.saveValue(getAlbumsKey(params), result);
+        return result;
     }
 
     @Override
@@ -112,17 +127,27 @@ public class AlbumServiceImpl implements AlbumService {
         Album album = fetchAlbumById(id);
         fileService.deleteFileByUrl(album.getImage());
         albumRepository.delete(album);
+
+        cacheService.deleteKeysByPrefix(getAlbumsKey());
+        cacheService.deleteKeysByPrefix(getTracksKey());
+        cacheService.deleteKeysByPrefix(getAlbumTracksKey(id));
     }
 
     @Override
     public PageResponse<AlbumResponse> getAlbumsByGenreId(Integer genreId, AlbumParams params) {
+        PageResponse<AlbumResponse> cacheData = cacheService.getValue(getGenreAlbumsKey(genreId,params), new TypeReference<>() {});
+        if (cacheData != null){
+            return cacheData;
+        }
         Genre genre = fetchGenreById(genreId);
 
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Album> albumPage = albumRepository.findAlbumsByGenre(
                 pageable, params.getSearch(), params.getSort(), genre.getId()
         );
-        return getAlbumResponses(albumPage);
+        PageResponse<AlbumResponse> result = getAlbumResponses(albumPage);
+        cacheService.saveValue(getGenreAlbumsKey(genreId,params), result);
+        return result;
     }
 
     private Genre fetchGenreById(Integer genreId) {
@@ -132,13 +157,19 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Override
     public PageResponse<AlbumResponse> getAlbumsByArtistId(Long artistId, AlbumParams params) {
+        PageResponse<AlbumResponse> cacheData = cacheService.getValue(getArtistAlbumsKey(artistId,params), new TypeReference<>() {});
+        if (cacheData != null){
+            return cacheData;
+        }
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Album> albumPage = albumRepository.findAlbumsByArtist(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
         );
-        return getAlbumResponses(albumPage);
+        PageResponse<AlbumResponse> result = getAlbumResponses(albumPage);
+        cacheService.saveValue(getArtistAlbumsKey(artistId,params), result);
+        return result;
     }
 
     private Album fetchAlbumById(Long id) {

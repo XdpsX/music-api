@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
 import com.xdpsx.music.dto.request.params.TrackParams;
@@ -9,6 +10,7 @@ import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.TrackMapper;
 import com.xdpsx.music.repository.*;
 import com.xdpsx.music.security.UserContext;
+import com.xdpsx.music.service.CacheService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.util.Compare;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.xdpsx.music.constant.FileConstants.*;
+import static com.xdpsx.music.util.KeyGenerator.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,7 @@ public class TrackServiceImpl implements TrackService {
     private final ArtistRepository artistRepository;
     private final PlaylistRepository playlistRepository;
     private final UserContext userContext;
+    private final CacheService cacheService;
 
     @Override
     public TrackResponse createTrack(TrackRequest request, MultipartFile image, MultipartFile file) {
@@ -59,6 +63,7 @@ public class TrackServiceImpl implements TrackService {
         track.setUrl(uploadFile(file, TRACKS_FILE_FOLDER));
 
         Track savedTrack = trackRepository.save(track);
+        cacheService.deleteKeysByPrefix(getTracksKey());
         return trackMapper.fromEntityToResponse(savedTrack);
     }
 
@@ -71,6 +76,7 @@ public class TrackServiceImpl implements TrackService {
         Track updatedTrack = trackRepository.save(trackToUpdate);
         deleteOldFiles(trackToUpdate, newImage, newFile);
 
+        cacheService.deleteKeysByPrefix(getTracksKey());
         return this.mapToResponse(updatedTrack);
     }
 
@@ -82,11 +88,17 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public PageResponse<TrackResponse> getAllTracks(TrackParams params) {
+        PageResponse<TrackResponse> cacheData = cacheService.getValue(getTracksKey(params), new TypeReference<>() {});
+        if (cacheData != null){
+            return cacheData;
+        }
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findWithFilters(
                 pageable, params.getSearch(), params.getSort()
         );
-        return getTrackResponses(trackPage);
+        PageResponse<TrackResponse> result = getTrackResponses(trackPage);
+        cacheService.saveValue(getTracksKey(params), result);
+        return result;
     }
 
     @Transactional
@@ -101,20 +113,31 @@ public class TrackServiceImpl implements TrackService {
         adjustTrackNumbers(albumId, deletedTrackNumber);
 
         deleteFiles(trackToDelete);
+        cacheService.deleteKeysByPrefix(getTracksKey());
     }
 
     @Override
     public PageResponse<TrackResponse> getTracksByGenreId(Integer genreId, TrackParams params) {
+        PageResponse<TrackResponse> cacheData = cacheService.getValue(getGenreTracksKey(genreId, params), new TypeReference<>() {});
+        if (cacheData != null){
+            return cacheData;
+        }
         Genre genre = getGenre(genreId);
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findTracksByGenre(
                 pageable, params.getSearch(), params.getSort(), genre.getId()
         );
-        return getTrackResponses(trackPage);
+        PageResponse<TrackResponse> result = getTrackResponses(trackPage);
+        cacheService.saveValue(getGenreTracksKey(genreId, params), result);
+        return result;
     }
 
     @Override
     public PageResponse<TrackResponse> getTracksByArtistId(Long artistId, TrackParams params) {
+        PageResponse<TrackResponse> cacheData = cacheService.getValue(getArtistTracksKey(artistId, params), new TypeReference<>() {});
+        if (cacheData != null){
+            return cacheData;
+        }
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
 
@@ -122,18 +145,26 @@ public class TrackServiceImpl implements TrackService {
         Page<Track> trackPage = trackRepository.findTracksByArtist(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
         );
-        return getTrackResponses(trackPage);
+        PageResponse<TrackResponse> result = getTrackResponses(trackPage);
+        cacheService.saveValue(getArtistTracksKey(artistId, params), result);
+        return result;
     }
 
     @Override
     public PageResponse<TrackResponse> getTracksByAlbumId(Long albumId, TrackParams params) {
+        PageResponse<TrackResponse> cacheData = cacheService.getValue(getAlbumTracksKey(albumId, params), new TypeReference<>() {});
+        if (cacheData != null){
+            return cacheData;
+        }
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", albumId)));
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findTracksByAlbum(
                 pageable, params.getSearch(), params.getSort(), album.getId()
         );
-        return getTrackResponses(trackPage);
+        PageResponse<TrackResponse> result = getTrackResponses(trackPage);
+        cacheService.saveValue(getAlbumTracksKey(albumId, params), result);
+        return result;
     }
 
     @Override
