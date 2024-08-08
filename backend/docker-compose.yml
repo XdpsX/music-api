@@ -1,6 +1,21 @@
 version: "3.8"
 
 services:
+  postgres:
+    container_name: postgresql
+    image: postgres:16
+    environment:
+      POSTGRES_USER: xdpsx
+      POSTGRES_PASSWORD: xdpsxpass
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: music_app
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - music-app
+    restart: unless-stopped
   maildev:
     image: maildev/maildev
     container_name: maildev
@@ -13,3 +28,9 @@ services:
       - MAILDEV_INCOMING_USER=xdpsx
       - MAILDEV_INCOMING_PASS=xdpsxpass
     restart: always
+
+networks:
+  music-app:
+    driver: bridge
+volumes:
+  postgres:

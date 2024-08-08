@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/music_app
-    username: postgres
-    password: admin
+    username: xdpsx
+    password: xdpsxpass
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
