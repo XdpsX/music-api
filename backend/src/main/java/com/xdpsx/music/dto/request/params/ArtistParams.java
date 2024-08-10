@@ -19,4 +19,9 @@ public class ArtistParams extends PageParams {
     private String sort = DEFAULT_SORT_FIELD;
 
     private Gender gender;
+
+    @Override
+    public String toString() {
+        return String.format("%s,%s,%s,%s,%s", getPageNum(), getPageSize(), getSearch(), getSort(), getGender());
+    }
 }

@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.constant.Keys;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.params.AlbumParams;
 import com.xdpsx.music.dto.request.AlbumRequest;
@@ -17,6 +18,10 @@ import com.xdpsx.music.service.AlbumService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.util.Compare;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +43,12 @@ public class AlbumServiceImpl implements AlbumService {
     private final GenreRepository genreRepository;
     private final ArtistRepository artistRepository;
 
-
+    @CachePut(value = Keys.ALBUM_ITEM, key = "#result.id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = Keys.ALBUMS, allEntries = true),
+            @CacheEvict(cacheNames = Keys.GENRE_ALBUMS, allEntries = true),
+            @CacheEvict(cacheNames = Keys.ARTIST_ALBUMS, allEntries = true)
+    })
     @Override
     public AlbumResponse createAlbum(AlbumRequest request, MultipartFile image) {
         Album album = albumMapper.fromRequestToEntity(request);
@@ -61,6 +71,12 @@ public class AlbumServiceImpl implements AlbumService {
         return albumMapper.fromEntityToResponse(savedAlbum);
     }
 
+    @CachePut(value = Keys.ALBUM_ITEM, key = "#result.id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = Keys.ALBUMS, allEntries = true),
+            @CacheEvict(cacheNames = Keys.GENRE_ALBUMS, allEntries = true),
+            @CacheEvict(cacheNames = Keys.ARTIST_ALBUMS, allEntries = true)
+    })
     @Override
     public AlbumResponse updateAlbum(Long id, AlbumRequest request, MultipartFile newImage) {
         Album album = fetchAlbumById(id);
@@ -93,12 +109,14 @@ public class AlbumServiceImpl implements AlbumService {
         return albumMapper.fromEntityToResponse(updatedAlbum);
     }
 
+    @Cacheable(value = Keys.ALBUM_ITEM, key = "#id")
     @Override
     public AlbumResponse getAlbumById(Long id) {
         Album album = fetchAlbumById(id);
         return albumMapper.fromEntityToResponse(album);
     }
 
+    @Cacheable(cacheNames = Keys.ALBUMS, key = "#params")
     @Override
     public PageResponse<AlbumResponse> getAllAlbums(AlbumParams params) {
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
@@ -108,13 +126,22 @@ public class AlbumServiceImpl implements AlbumService {
         return pageMapper.toAlbumPageResponse(albumPage);
     }
 
+
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = Keys.ALBUM_ITEM, key = "#id"),
+            @CacheEvict(value = Keys.ALBUMS, allEntries = true),
+            @CacheEvict(cacheNames = Keys.GENRE_ALBUMS, allEntries = true),
+            @CacheEvict(cacheNames = Keys.ARTIST_ALBUMS, allEntries = true)
+    })
     public void deleteAlbum(Long id) {
         Album album = fetchAlbumById(id);
         fileService.deleteFileByUrl(album.getImage());
         albumRepository.delete(album);
     }
 
+    @Cacheable(cacheNames = Keys.GENRE_ALBUMS,
+            key = "#genreId + '_' + #params")
     @Override
     public PageResponse<AlbumResponse> getAlbumsByGenreId(Integer genreId, AlbumParams params) {
         Genre genre = fetchGenreById(genreId);
@@ -132,6 +159,7 @@ public class AlbumServiceImpl implements AlbumService {
     }
 
     @Override
+    @Cacheable(cacheNames = Keys.ARTIST_ALBUMS, key = "#artistId + '_' + #params")
     public PageResponse<AlbumResponse> getAlbumsByArtistId(Long artistId, AlbumParams params) {
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));

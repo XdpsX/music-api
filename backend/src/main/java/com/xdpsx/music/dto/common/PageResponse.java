@@ -2,6 +2,7 @@ package com.xdpsx.music.dto.common;
 
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.Collection;
 
 @Setter
@@ -9,7 +10,7 @@ import java.util.Collection;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PageResponse<T> {
+public class PageResponse<T> implements Serializable {
     private Collection<T> items;
     private int pageNum;
     private int pageSize;
