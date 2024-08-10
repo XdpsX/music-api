@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.constant.Keys;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
 import com.xdpsx.music.dto.request.params.TrackParams;
@@ -10,10 +11,15 @@ import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.TrackMapper;
 import com.xdpsx.music.repository.*;
 import com.xdpsx.music.security.UserContext;
+import com.xdpsx.music.service.CacheService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.util.Compare;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,8 +44,16 @@ public class TrackServiceImpl implements TrackService {
     private final ArtistRepository artistRepository;
     private final PlaylistRepository playlistRepository;
     private final UserContext userContext;
+    private final CacheService cacheService;
 
     @Override
+    @CachePut(value = Keys.TRACK_ITEM, key = "#result.id")
+    @Caching(evict = {
+            @CacheEvict(value = Keys.TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.GENRE_TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.ARTIST_TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.ALBUM_TRACKS, allEntries = true)
+    })
     public TrackResponse createTrack(TrackRequest request, MultipartFile image, MultipartFile file) {
         Track track = trackMapper.fromRequestToEntity(request);
 
@@ -66,6 +80,13 @@ public class TrackServiceImpl implements TrackService {
 
     @Transactional
     @Override
+    @CachePut(value = Keys.TRACK_ITEM, key = "#result.id")
+    @Caching(evict = {
+            @CacheEvict(value = Keys.TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.GENRE_TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.ARTIST_TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.ALBUM_TRACKS, allEntries = true)
+    })
     public TrackResponse updateTrack(Long id, TrackRequest request, MultipartFile newImage, MultipartFile newFile) {
         Track trackToUpdate = getTrack(id);
         updateTrackDetails(trackToUpdate, request, newImage, newFile);
@@ -77,12 +98,14 @@ public class TrackServiceImpl implements TrackService {
     }
 
     @Override
+    @Cacheable(value = Keys.TRACK_ITEM, key = "#id")
     public TrackResponse getTrackById(Long id) {
         Track track = getTrack(id);
         return trackMapper.fromEntityToResponse(track);
     }
 
     @Override
+    @Cacheable(cacheNames = Keys.TRACKS, key = "#params")
     public PageResponse<TrackResponse> getAllTracks(TrackParams params) {
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findWithFilters(
@@ -93,6 +116,13 @@ public class TrackServiceImpl implements TrackService {
 
     @Transactional
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = Keys.TRACK_ITEM, key = "#id"),
+            @CacheEvict(value = Keys.TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.GENRE_TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.ARTIST_TRACKS, allEntries = true),
+            @CacheEvict(value = Keys.ALBUM_TRACKS, allEntries = true)
+    })
     public void deleteTrack(Long id) {
         Track trackToDelete = getTrack(id);
         trackRepository.delete(trackToDelete);
@@ -100,6 +130,7 @@ public class TrackServiceImpl implements TrackService {
     }
 
     @Override
+    @Cacheable(cacheNames = Keys.GENRE_TRACKS, key = "#genreId + '_' + #params")
     public PageResponse<TrackResponse> getTracksByGenreId(Integer genreId, TrackParams params) {
         Genre genre = getGenre(genreId);
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
@@ -110,6 +141,7 @@ public class TrackServiceImpl implements TrackService {
     }
 
     @Override
+    @Cacheable(cacheNames = Keys.ARTIST_TRACKS, key = "#artistId + '_' + #params")
     public PageResponse<TrackResponse> getTracksByArtistId(Long artistId, TrackParams params) {
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
@@ -122,6 +154,7 @@ public class TrackServiceImpl implements TrackService {
     }
 
     @Override
+    @Cacheable(cacheNames = Keys.ALBUM_TRACKS, key = "#albumId + '_' + #params")
     public PageResponse<TrackResponse> getTracksByAlbumId(Long albumId, TrackParams params) {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", albumId)));
@@ -156,11 +189,20 @@ public class TrackServiceImpl implements TrackService {
         return pageMapper.toTrackPageResponse(trackPage);
     }
 
+    @CacheEvict(cacheNames = Keys.TRACK_ITEM, key = "#trackId")
     @Override
+    @Transactional
     public void incrementListeningCount(Long trackId, User loggedUser) {
         Track track = getTrack(trackId);
-        track.setListeningCount(track.getListeningCount() + 1);
-        trackRepository.save(track);
+        String listeningKey = Keys.getListeningKey(loggedUser.getId());
+        boolean exists = cacheService.hasKey(listeningKey);
+        if (!exists){
+            track.setListeningCount(track.getListeningCount() + 1);
+            trackRepository.save(track);
+
+            cacheService.setValue(listeningKey, "1", track.getDurationMs());
+        }
+
     }
 
     private List<Artist> getArtists(List<Long> artistIds) {

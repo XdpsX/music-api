@@ -2,6 +2,7 @@ package com.xdpsx.music.dto.response;
 
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TrackResponse {
+public class TrackResponse implements Serializable {
     private Long id;
     private String name;
     private Integer durationMs;
@@ -19,6 +20,7 @@ public class TrackResponse {
     private long totalLikes;
     private LocalDateTime createdAt;
     private Integer trackNumber;
+    private int listeningCount;
     private AlbumResponse album;
     private GenreResponse genre;
     private List<ArtistResponse> artists;

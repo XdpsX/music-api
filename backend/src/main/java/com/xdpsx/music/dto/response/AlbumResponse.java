@@ -2,6 +2,7 @@ package com.xdpsx.music.dto.response;
 
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -10,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AlbumResponse {
+public class AlbumResponse implements Serializable {
     private Long id;
     private String name;
     private String image;

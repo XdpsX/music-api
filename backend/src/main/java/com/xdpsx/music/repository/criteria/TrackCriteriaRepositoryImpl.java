@@ -84,6 +84,10 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
 
             switch (field) {
                 case TOTAL_LIKES_FIELD -> sortByTotalLikes(cb, query, track, desc);
+                case LISTENING_FIELD -> {
+                    Path<?> path = track.get("listeningCount");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
                 case DATE_FIELD -> {
                     Path<?> path = track.get("createdAt");
                     query.orderBy(desc ? cb.desc(path) : cb.asc(path));
@@ -157,6 +161,10 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
 
             switch (field) {
                 case TOTAL_LIKES_FIELD -> sortByTotalLikes(cb, query, track, desc);
+                case LISTENING_FIELD -> {
+                    Path<?> path = track.get("listeningCount");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
                 case DATE_FIELD -> {
                     Path<?> path = track.get("trackNumber");
                     query.orderBy(desc ? cb.desc(path) : cb.asc(path));
@@ -225,6 +233,10 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
 
             switch (field) {
                 case TOTAL_LIKES_FIELD -> sortByTotalLikes(cb, query, track, desc);
+                case LISTENING_FIELD -> {
+                    Path<?> path = track.get("listeningCount");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
                 case DATE_FIELD -> {
                     Join<Track, PlaylistTrack> playlistTrack = track.join("playlists");
                     Path<?> path = playlistTrack.get("trackNumber");
@@ -275,6 +287,10 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
 
             switch (field) {
                 case TOTAL_LIKES_FIELD -> sortByTotalLikes(cb, query, track, desc);
+                case LISTENING_FIELD -> {
+                    Path<?> path = track.get("listeningCount");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
                 case DATE_FIELD -> {
                     Join<Track, Like> like = track.join("usersLiked");
                     Path<?> path = like.get("createdAt");
