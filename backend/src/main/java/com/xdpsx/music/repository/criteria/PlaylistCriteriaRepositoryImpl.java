@@ -41,14 +41,12 @@ public class PlaylistCriteriaRepositoryImpl implements PlaylistCriteriaRepositor
 
     private Predicate[] buildPredicates(CriteriaBuilder cb, Root<Playlist> playlist, String name, Long ownerId) {
         List<Predicate> predicates = new ArrayList<>();
-
-        if (name != null && !name.isEmpty()) {
-            predicates.add(cb.like(cb.lower(playlist.get("name")), "%" + name.toLowerCase() + "%"));
-        }
         if (ownerId != null) {
             predicates.add(cb.equal(playlist.get("owner").get("id"), ownerId));
         }
-
+        if (name != null && !name.isEmpty()) {
+            predicates.add(cb.like(cb.lower(playlist.get("name")), "%" + name.toLowerCase() + "%"));
+        }
         return predicates.toArray(new Predicate[0]);
     }
 

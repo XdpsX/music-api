@@ -60,9 +60,6 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
                                         String name, Integer genreId, Long artistId) {
         List<Predicate> predicates = new ArrayList<>();
 
-        if (name != null && !name.isEmpty()) {
-            predicates.add(cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%"));
-        }
         if (genreId != null) {
             predicates.add(cb.equal(track.get("genre").get("id"), genreId));
         }
@@ -70,6 +67,13 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
             Join<Track, ?> artists = track.join("artists");
             predicates.add(cb.equal(artists.get("id"), artistId));
         }
+        if (genreId != null || artistId != null){
+            predicates.add(cb.isNull(track.get("album")));
+        }
+        if (name != null && !name.isEmpty()) {
+            predicates.add(cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%"));
+        }
+
         return predicates.toArray(new Predicate[0]);
     }
 
@@ -79,9 +83,7 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
             String field = desc ? sortField.substring(1) : sortField;
 
             switch (field) {
-                case TOTAL_LIKES_FIELD -> {
-                    sortByTotalLikes(cb, query, track, desc);
-                }
+                case TOTAL_LIKES_FIELD -> sortByTotalLikes(cb, query, track, desc);
                 case DATE_FIELD -> {
                     Path<?> path = track.get("createdAt");
                     query.orderBy(desc ? cb.desc(path) : cb.asc(path));
@@ -137,14 +139,13 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
 
     private Predicate[] buildPredicates(CriteriaBuilder cb, Root<Track> track, String name, Long albumId) {
         List<Predicate> predicates = new ArrayList<>();
-
-        if (name != null && !name.isEmpty()) {
-            predicates.add(cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%"));
-        }
         if (albumId == null) {
             predicates.add(cb.isNull(track.get("album")));
         }else {
             predicates.add(cb.equal(track.get("album").get("id"), albumId));
+        }
+        if (name != null && !name.isEmpty()) {
+            predicates.add(cb.like(cb.lower(track.get("name")), "%" + name.toLowerCase() + "%"));
         }
         return predicates.toArray(new Predicate[0]);
     }
@@ -155,9 +156,7 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
             String field = desc ? sortField.substring(1) : sortField;
 
             switch (field) {
-                case TOTAL_LIKES_FIELD -> {
-                    sortByTotalLikes(cb, query, track, desc);
-                }
+                case TOTAL_LIKES_FIELD -> sortByTotalLikes(cb, query, track, desc);
                 case DATE_FIELD -> {
                     Path<?> path = track.get("trackNumber");
                     query.orderBy(desc ? cb.desc(path) : cb.asc(path));
@@ -196,7 +195,7 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
         }
         cq.where(cb.and(playlistPredicate, namePredicate));
 
-        applyBasicSorting(cb, cq, track, sort);
+        applySortingPlaylistTracks(cb, cq, track, sort);
 
         List<Track> tracks = entityManager.createQuery(cq)
                 .setFirstResult((int) pageable.getOffset())
@@ -219,6 +218,28 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
         return new PageImpl<>(tracks, pageable, total);
     }
 
+    private void applySortingPlaylistTracks(CriteriaBuilder cb, CriteriaQuery<Track> query, Root<Track> track, String sortField) {
+        if (sortField != null && !sortField.isEmpty()) {
+            boolean desc = sortField.startsWith("-");
+            String field = desc ? sortField.substring(1) : sortField;
+
+            switch (field) {
+                case TOTAL_LIKES_FIELD -> sortByTotalLikes(cb, query, track, desc);
+                case DATE_FIELD -> {
+                    Join<Track, PlaylistTrack> playlistTrack = track.join("playlists");
+                    Path<?> path = playlistTrack.get("trackNumber");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                case NAME_FIELD -> {
+                    Path<?> path = track.get("name");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                default -> {
+                }
+            }
+        }
+    }
+
     @Override
     public Page<Track> findFavoriteTracksByUserId(Pageable pageable, String name, String sort, Long userId) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -235,7 +256,7 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
 
         cq.where(cb.and(userPredicate, namePredicate));
 
-        applyBasicSorting(cb, cq, track, sort);
+        applySortingFavoriteTracks(cb, cq, track, sort);
 
         List<Track> tracks = entityManager.createQuery(cq)
                 .setFirstResult((int) pageable.getOffset())
@@ -245,6 +266,28 @@ public class TrackCriteriaRepositoryImpl implements TrackCriteriaRepository {
         long totalRows = getTotalRows(cb, userId, name);
 
         return new PageImpl<>(tracks, pageable, totalRows);
+    }
+
+    private void applySortingFavoriteTracks(CriteriaBuilder cb, CriteriaQuery<Track> query, Root<Track> track, String sortField) {
+        if (sortField != null && !sortField.isEmpty()) {
+            boolean desc = sortField.startsWith("-");
+            String field = desc ? sortField.substring(1) : sortField;
+
+            switch (field) {
+                case TOTAL_LIKES_FIELD -> sortByTotalLikes(cb, query, track, desc);
+                case DATE_FIELD -> {
+                    Join<Track, Like> like = track.join("usersLiked");
+                    Path<?> path = like.get("createdAt");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                case NAME_FIELD -> {
+                    Path<?> path = track.get("name");
+                    query.orderBy(desc ? cb.desc(path) : cb.asc(path));
+                }
+                default -> {
+                }
+            }
+        }
     }
 
     private long getTotalRows(CriteriaBuilder cb, Long userId, String name) {
