@@ -1,11 +1,13 @@
 package com.xdpsx.music.dto.common;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.util.Collection;
 
-@Data
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class PageResponse<T> {
     private Collection<T> items;

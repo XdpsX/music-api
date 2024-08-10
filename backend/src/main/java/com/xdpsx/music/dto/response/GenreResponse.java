@@ -1,10 +1,11 @@
 package com.xdpsx.music.dto.response;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
+@AllArgsConstructor
 public class GenreResponse {
     private Integer id;
     private String name;

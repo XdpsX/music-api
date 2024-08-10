@@ -1,10 +1,13 @@
 package com.xdpsx.music.dto.response;
 
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class PlaylistResponse {
     private Long id;
     private String name;

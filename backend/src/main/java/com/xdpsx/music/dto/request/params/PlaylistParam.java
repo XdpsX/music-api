@@ -2,12 +2,15 @@ package com.xdpsx.music.dto.request.params;
 
 import com.xdpsx.music.dto.common.PageParams;
 import com.xdpsx.music.validator.SortFieldConstraint;
-import lombok.Data;
+import lombok.*;
 
 import static com.xdpsx.music.constant.PageConstants.*;
 import static com.xdpsx.music.constant.PageConstants.DEFAULT_SORT_FIELD;
 
-@Data
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class PlaylistParam extends PageParams {
     private String search;
 

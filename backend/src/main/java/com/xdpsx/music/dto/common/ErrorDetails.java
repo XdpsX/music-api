@@ -1,12 +1,14 @@
 package com.xdpsx.music.dto.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Data;
+import lombok.*;
 
 import java.util.Date;
 import java.util.Map;
 
-@Data
+@Setter
+@Getter
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorDetails {
     private Date timestamp;

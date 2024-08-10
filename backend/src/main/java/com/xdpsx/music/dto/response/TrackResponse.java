@@ -1,12 +1,14 @@
 package com.xdpsx.music.dto.response;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class TrackResponse {
     private Long id;

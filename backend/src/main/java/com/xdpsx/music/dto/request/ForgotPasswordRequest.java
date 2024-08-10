@@ -3,9 +3,12 @@ package com.xdpsx.music.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ForgotPasswordRequest {
     @Email(message = "Email is in wrong format")
     @NotBlank

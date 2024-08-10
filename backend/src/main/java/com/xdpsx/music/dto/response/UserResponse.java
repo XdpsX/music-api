@@ -1,8 +1,11 @@
 package com.xdpsx.music.dto.response;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserResponse {
     private Long id;
     private String name;

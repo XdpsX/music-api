@@ -1,13 +1,15 @@
 package com.xdpsx.music.dto.response;
 
 import com.xdpsx.music.model.enums.Gender;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class ArtistResponse {
     private Long id;
