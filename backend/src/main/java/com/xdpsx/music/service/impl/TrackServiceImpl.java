@@ -11,6 +11,7 @@ import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.TrackMapper;
 import com.xdpsx.music.repository.*;
 import com.xdpsx.music.security.UserContext;
+import com.xdpsx.music.service.CacheService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.util.Compare;
@@ -43,6 +44,7 @@ public class TrackServiceImpl implements TrackService {
     private final ArtistRepository artistRepository;
     private final PlaylistRepository playlistRepository;
     private final UserContext userContext;
+    private final CacheService cacheService;
 
     @Override
     @CachePut(value = Keys.TRACK_ITEM, key = "#result.id")
@@ -187,11 +189,20 @@ public class TrackServiceImpl implements TrackService {
         return pageMapper.toTrackPageResponse(trackPage);
     }
 
+    @CacheEvict(cacheNames = Keys.TRACK_ITEM, key = "#trackId")
     @Override
+    @Transactional
     public void incrementListeningCount(Long trackId, User loggedUser) {
         Track track = getTrack(trackId);
-        track.setListeningCount(track.getListeningCount() + 1);
-        trackRepository.save(track);
+        String listeningKey = Keys.getListeningKey(loggedUser.getId());
+        boolean exists = cacheService.hasKey(listeningKey);
+        if (!exists){
+            track.setListeningCount(track.getListeningCount() + 1);
+            trackRepository.save(track);
+
+            cacheService.setValue(listeningKey, "1", track.getDurationMs());
+        }
+
     }
 
     private List<Artist> getArtists(List<Long> artistIds) {

@@ -20,6 +20,7 @@ public class TrackResponse implements Serializable {
     private long totalLikes;
     private LocalDateTime createdAt;
     private Integer trackNumber;
+    private int listeningCount;
     private AlbumResponse album;
     private GenreResponse genre;
     private List<ArtistResponse> artists;

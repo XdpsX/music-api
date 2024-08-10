@@ -12,4 +12,8 @@ public class Keys {
     public static final String GENRE_TRACKS = "genre-tracks";
     public static final String ARTIST_TRACKS = "artist-tracks";
     public static final String ALBUM_TRACKS = "album-tracks";
+
+    public static String getListeningKey(Long userId){
+        return "listening:" + userId;
+    }
 }
