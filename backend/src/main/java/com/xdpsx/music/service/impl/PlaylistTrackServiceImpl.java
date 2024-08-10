@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -80,16 +79,5 @@ public class PlaylistTrackServiceImpl implements PlaylistTrackService {
 
         playlistTrackRepository.deleteById(id);
 
-        updateTrackNumbers(playlistId);
-    }
-
-    private void updateTrackNumbers(Long playlistId) {
-        List<PlaylistTrack> tracks = playlistTrackRepository.findByPlaylistIdOrderByTrackNumber(playlistId);
-
-        for (int i = 0; i < tracks.size(); i++) {
-            PlaylistTrack track = tracks.get(i);
-            track.setTrackNumber(i + 1);
-            playlistTrackRepository.save(track);
-        }
     }
 }

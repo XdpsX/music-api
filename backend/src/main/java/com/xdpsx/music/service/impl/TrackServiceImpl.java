@@ -95,13 +95,7 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public void deleteTrack(Long id) {
         Track trackToDelete = getTrack(id);
-
-        Long albumId = trackToDelete.getAlbum().getId();
-        Integer deletedTrackNumber = trackToDelete.getTrackNumber();
-
         trackRepository.delete(trackToDelete);
-        adjustTrackNumbers(albumId, deletedTrackNumber);
-
         deleteFiles(trackToDelete);
     }
 
@@ -221,13 +215,6 @@ public class TrackServiceImpl implements TrackService {
     }
 
     private void handleAlbumUpdate(Track trackToUpdate, Long newAlbumId) {
-        Album oldAlbum = trackToUpdate.getAlbum();
-        Integer deletedTrackNumber = trackToUpdate.getTrackNumber();
-
-        if (oldAlbum != null) {
-            adjustTrackNumbers(oldAlbum.getId(), deletedTrackNumber);
-        }
-
         if (newAlbumId != null) {
             Album newAlbum = getAlbum(newAlbumId);
             int newTrackNumber = trackRepository.countByAlbumId(newAlbum.getId());
@@ -237,14 +224,6 @@ public class TrackServiceImpl implements TrackService {
             trackToUpdate.setTrackNumber(null);
             trackToUpdate.setAlbum(null);
         }
-    }
-
-    private void adjustTrackNumbers(Long albumId, Integer deletedTrackNumber) {
-        List<Track> tracks = trackRepository.findByAlbumIdOrderByTrackNumberAsc(albumId);
-        tracks.stream()
-                .filter(track -> track.getTrackNumber() > deletedTrackNumber)
-                .forEach(track -> track.setTrackNumber(track.getTrackNumber() - 1));
-        trackRepository.saveAll(tracks);
     }
 
     private Album getAlbum(Long albumId) {

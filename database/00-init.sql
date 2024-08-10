@@ -177,10 +177,69 @@ AFTER UPDATE OF account_locked ON users
 FOR EACH ROW
 EXECUTE FUNCTION revoke_tokens_on_account_lock();
 
+-- When delete track in album, adjust track number of the other tracks
+CREATE OR REPLACE FUNCTION adjust_tracks_track_numbers_after_deletion()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE tracks
+    SET track_number = track_number - 1
+    WHERE album_id = OLD.album_id AND track_number > OLD.track_number;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_delete_track
+BEFORE DELETE ON tracks
+FOR EACH ROW
+WHEN (OLD.album_id IS NOT NULL AND OLD.track_number IS NOT NULL)
+EXECUTE FUNCTION adjust_tracks_track_numbers_after_deletion();
+
+-- When update track from an album to another album, adjust track number of the other tracks in old album
+CREATE OR REPLACE FUNCTION adjust_tracks_track_numbers_on_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.album_id IS DISTINCT FROM NEW.album_id THEN
+        UPDATE tracks
+        SET track_number = track_number - 1
+        WHERE album_id = OLD.album_id AND track_number > OLD.track_number;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_update_track
+BEFORE UPDATE ON tracks
+FOR EACH ROW
+WHEN (OLD.album_id IS NOT NULL AND OLD.track_number IS NOT NULL)
+EXECUTE FUNCTION adjust_tracks_track_numbers_on_update();
+
+-- When remove track from playlist, adjust track number of other tracks in playlist
+CREATE OR REPLACE FUNCTION adjust_playlist_tracks_track_numbers_after_deletion()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE playlist_tracks
+    SET track_number = track_number - 1
+    WHERE playlist_id = OLD.playlist_id AND track_number > OLD.track_number;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_delete_playlist_track
+BEFORE DELETE ON playlist_tracks
+FOR EACH ROW
+EXECUTE FUNCTION adjust_playlist_tracks_track_numbers_after_deletion();
+
 -- INDEXES
 CREATE INDEX idx_tokens_access_token ON tokens (access_token);
 CREATE INDEX idx_tokens_refresh_token ON tokens (refresh_token);
 
-CREATE INDEX idx_tracks_name ON tracks (name);
-CREATE INDEX idx_tracks_genre_id_name ON tracks (genre_id, name);
-CREATE INDEX idx_tracks_album_id_name ON tracks (album_id, name);
+-- CREATE INDEX idx_tracks_name ON tracks (name);
+CREATE INDEX idx_tracks_genre_id ON tracks (genre_id);
+CREATE INDEX idx_tracks_album_id ON tracks (album_id);
+
+CREATE INDEX idx_tracks_album_id_track_number ON tracks(album_id, track_number);
+
+CREATE INDEX idx_playlists_id_owner_id ON playlists(id, owner_id);
