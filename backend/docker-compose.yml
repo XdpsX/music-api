@@ -16,6 +16,16 @@ services:
     networks:
       - music-app
     restart: unless-stopped
+  redis:
+    container_name: redis
+    image: redis:7.2.5
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - music-app
+    restart: unless-stopped
   maildev:
     image: maildev/maildev
     container_name: maildev
@@ -34,3 +44,4 @@ networks:
     driver: bridge
 volumes:
   postgres:
+  redis-data:
