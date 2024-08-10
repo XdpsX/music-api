@@ -4,6 +4,7 @@ import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
 import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.TrackResponse;
+import com.xdpsx.music.mapper.PageMapper;
 import com.xdpsx.music.model.entity.*;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.TrackMapper;
@@ -29,6 +30,7 @@ import static com.xdpsx.music.constant.FileConstants.*;
 @RequiredArgsConstructor
 public class TrackServiceImpl implements TrackService {
     private final TrackMapper trackMapper;
+    private final PageMapper pageMapper;
     private final FileService fileService;
     private final TrackRepository trackRepository;
     private final AlbumRepository albumRepository;
@@ -71,13 +73,13 @@ public class TrackServiceImpl implements TrackService {
         Track updatedTrack = trackRepository.save(trackToUpdate);
         deleteOldFiles(trackToUpdate, newImage, newFile);
 
-        return this.mapToResponse(updatedTrack);
+        return trackMapper.fromEntityToResponse(updatedTrack);
     }
 
     @Override
     public TrackResponse getTrackById(Long id) {
         Track track = getTrack(id);
-        return this.mapToResponse(track);
+        return trackMapper.fromEntityToResponse(track);
     }
 
     @Override
@@ -86,7 +88,7 @@ public class TrackServiceImpl implements TrackService {
         Page<Track> trackPage = trackRepository.findWithFilters(
                 pageable, params.getSearch(), params.getSort()
         );
-        return getTrackResponses(trackPage);
+        return pageMapper.toTrackPageResponse(trackPage);
     }
 
     @Transactional
@@ -110,7 +112,7 @@ public class TrackServiceImpl implements TrackService {
         Page<Track> trackPage = trackRepository.findTracksByGenre(
                 pageable, params.getSearch(), params.getSort(), genre.getId()
         );
-        return getTrackResponses(trackPage);
+        return pageMapper.toTrackPageResponse(trackPage);
     }
 
     @Override
@@ -122,7 +124,7 @@ public class TrackServiceImpl implements TrackService {
         Page<Track> trackPage = trackRepository.findTracksByArtist(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
         );
-        return getTrackResponses(trackPage);
+        return pageMapper.toTrackPageResponse(trackPage);
     }
 
     @Override
@@ -133,7 +135,7 @@ public class TrackServiceImpl implements TrackService {
         Page<Track> trackPage = trackRepository.findTracksByAlbum(
                 pageable, params.getSearch(), params.getSort(), album.getId()
         );
-        return getTrackResponses(trackPage);
+        return pageMapper.toTrackPageResponse(trackPage);
     }
 
     @Override
@@ -142,7 +144,7 @@ public class TrackServiceImpl implements TrackService {
         Page<Track> trackPage = trackRepository.findFavoriteTracksByUserId(
                 pageable, params.getSearch(), params.getSort(), loggedUser.getId()
         );
-        return getTrackResponses(trackPage);
+        return pageMapper.toTrackPageResponse(trackPage);
     }
 
     @Override
@@ -155,9 +157,9 @@ public class TrackServiceImpl implements TrackService {
 
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findTracksInPlaylist(
-                pageable, params.getSearch(), params.getSort(), playlistId
+                pageable, params.getSearch(), params.getSort(), playlist.getId()
         );
-        return getTrackResponses(trackPage);
+        return pageMapper.toTrackPageResponse(trackPage);
     }
 
     @Override
@@ -165,13 +167,6 @@ public class TrackServiceImpl implements TrackService {
         Track track = getTrack(trackId);
         track.setListeningCount(track.getListeningCount() + 1);
         trackRepository.save(track);
-    }
-
-    private TrackResponse mapToResponse(Track track){
-        TrackResponse response = trackMapper.fromEntityToResponse(track);
-        long totalLikes = trackRepository.countLikesByTrackId(track.getId());
-        response.setTotalLikes(totalLikes);
-        return response;
     }
 
     private List<Artist> getArtists(List<Long> artistIds) {
@@ -281,16 +276,4 @@ public class TrackServiceImpl implements TrackService {
         fileService.deleteFileByUrl(track.getUrl());
     }
 
-    private PageResponse<TrackResponse> getTrackResponses(Page<Track> trackPage) {
-        List<TrackResponse> responses = trackPage.getContent().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-        return PageResponse.<TrackResponse>builder()
-                .items(responses)
-                .pageNum(trackPage.getNumber() + 1)
-                .pageSize(trackPage.getSize())
-                .totalItems(trackPage.getTotalElements())
-                .totalPages(trackPage.getTotalPages())
-                .build();
-    }
 }

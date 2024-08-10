@@ -4,6 +4,7 @@ import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.params.AlbumParams;
 import com.xdpsx.music.dto.request.AlbumRequest;
 import com.xdpsx.music.dto.response.AlbumResponse;
+import com.xdpsx.music.mapper.PageMapper;
 import com.xdpsx.music.model.entity.Album;
 import com.xdpsx.music.model.entity.Artist;
 import com.xdpsx.music.model.entity.Genre;
@@ -12,7 +13,6 @@ import com.xdpsx.music.mapper.AlbumMapper;
 import com.xdpsx.music.repository.AlbumRepository;
 import com.xdpsx.music.repository.ArtistRepository;
 import com.xdpsx.music.repository.GenreRepository;
-import com.xdpsx.music.repository.TrackRepository;
 import com.xdpsx.music.service.AlbumService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.util.Compare;
@@ -32,11 +32,12 @@ import static com.xdpsx.music.constant.FileConstants.ALBUMS_IMG_FOLDER;
 @RequiredArgsConstructor
 public class AlbumServiceImpl implements AlbumService {
     private final AlbumMapper albumMapper;
+    private final PageMapper pageMapper;
     private final FileService fileService;
     private final AlbumRepository albumRepository;
     private final GenreRepository genreRepository;
     private final ArtistRepository artistRepository;
-    private final TrackRepository trackRepository;
+
 
     @Override
     public AlbumResponse createAlbum(AlbumRequest request, MultipartFile image) {
@@ -89,13 +90,13 @@ public class AlbumServiceImpl implements AlbumService {
         if (oldImage != null){
             fileService.deleteFileByUrl(oldImage);
         }
-        return this.mapToResponse(updatedAlbum);
+        return albumMapper.fromEntityToResponse(updatedAlbum);
     }
 
     @Override
     public AlbumResponse getAlbumById(Long id) {
         Album album = fetchAlbumById(id);
-        return this.mapToResponse(album);
+        return albumMapper.fromEntityToResponse(album);
     }
 
     @Override
@@ -104,7 +105,7 @@ public class AlbumServiceImpl implements AlbumService {
         Page<Album> albumPage = albumRepository.findWithFilters(
                 pageable, params.getSearch(), params.getSort()
         );
-        return getAlbumResponses(albumPage);
+        return pageMapper.toAlbumPageResponse(albumPage);
     }
 
     @Override
@@ -122,7 +123,7 @@ public class AlbumServiceImpl implements AlbumService {
         Page<Album> albumPage = albumRepository.findAlbumsByGenre(
                 pageable, params.getSearch(), params.getSort(), genre.getId()
         );
-        return getAlbumResponses(albumPage);
+        return pageMapper.toAlbumPageResponse(albumPage);
     }
 
     private Genre fetchGenreById(Integer genreId) {
@@ -138,7 +139,7 @@ public class AlbumServiceImpl implements AlbumService {
         Page<Album> albumPage = albumRepository.findAlbumsByArtist(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
         );
-        return getAlbumResponses(albumPage);
+        return pageMapper.toAlbumPageResponse(albumPage);
     }
 
     private Album fetchAlbumById(Long id) {
@@ -151,26 +152,6 @@ public class AlbumServiceImpl implements AlbumService {
                 .map(artistId -> artistRepository.findById(artistId)
                         .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId))))
                 .collect(Collectors.toList());
-    }
-
-    private AlbumResponse mapToResponse(Album album){
-        AlbumResponse response = albumMapper.fromEntityToResponse(album);
-        int totalTracks = trackRepository.countByAlbumId(album.getId());
-        response.setTotalTracks(totalTracks);
-        return response;
-    }
-
-    private PageResponse<AlbumResponse> getAlbumResponses(Page<Album> albumPage) {
-        List<AlbumResponse> responses = albumPage.getContent().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-        return PageResponse.<AlbumResponse>builder()
-                .items(responses)
-                .pageNum(albumPage.getNumber() + 1)
-                .pageSize(albumPage.getSize())
-                .totalItems(albumPage.getTotalElements())
-                .totalPages(albumPage.getTotalPages())
-                .build();
     }
 
 }
