@@ -4,6 +4,7 @@ import com.xdpsx.music.dto.request.AlbumRequest;
 import com.xdpsx.music.dto.response.AlbumResponse;
 import com.xdpsx.music.model.entity.Album;
 import com.xdpsx.music.repository.TrackRepository;
+import com.xdpsx.music.util.Links;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ public abstract class AlbumMapper {
         AlbumResponse response = mapToResponse(entity);
         int totalTracks = trackRepository.countByAlbumId(entity.getId());
         response.setTotalTracks(totalTracks);
+        Links.addLinksToAlbum(response);
         return response;
     }
 
