@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/playlists")
@@ -50,6 +51,8 @@ public class PlaylistController {
     ){
         User loggedUser = userContext.getLoggedUser();
         PageResponse<PlaylistResponse> responses = playlistService.getAllUserPlaylists(params, loggedUser);
+        String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
+        responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
     }
 
@@ -71,6 +74,8 @@ public class PlaylistController {
             @Valid TrackParams params
             ){
         PageResponse<TrackResponse> responses = trackService.getTracksByPlaylist(playlistId, params);
+        String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
+        responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
     }
 }

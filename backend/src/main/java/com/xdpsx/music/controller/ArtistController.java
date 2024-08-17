@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/artists")
@@ -61,6 +62,9 @@ public class ArtistController {
             @Valid ArtistParams params
     ) {
         PageResponse<ArtistResponse> responses = artistService.getAllArtists(params);
+        // Get the base URI of the current request
+        String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
+        responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
     }
 
@@ -70,6 +74,8 @@ public class ArtistController {
             @Valid AlbumParams params
     ){
         PageResponse<AlbumResponse> responses = albumService.getAlbumsByArtistId(artistId, params);
+        String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
+        responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
     }
 
@@ -79,6 +85,8 @@ public class ArtistController {
             @Valid TrackParams params
     ){
         PageResponse<TrackResponse> responses = trackService.getTracksByArtistId(artistId, params);
+        String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
+        responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
     }
 }

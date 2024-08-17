@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,6 +59,8 @@ public class TrackController {
             @Valid TrackParams params
     ) {
         PageResponse<TrackResponse> responses = trackService.getAllTracks(params);
+        String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
+        responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
     }
 
