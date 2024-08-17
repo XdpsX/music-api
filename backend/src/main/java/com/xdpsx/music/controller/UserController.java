@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/users")
@@ -75,6 +76,8 @@ public class UserController {
             @Valid UserParams params
     ){
         PageResponse<UserResponse> responses = userService.getAllUsers(params);
+        String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
+        responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
     }
 
@@ -84,6 +87,8 @@ public class UserController {
     ){
         User loggedUser = userContext.getLoggedUser();
         PageResponse<TrackResponse> responses = trackService.getLikedTracks(params, loggedUser);
+        String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
+        responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
     }
 }

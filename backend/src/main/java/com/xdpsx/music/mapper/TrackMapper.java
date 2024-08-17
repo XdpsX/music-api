@@ -4,6 +4,7 @@ import com.xdpsx.music.dto.request.TrackRequest;
 import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.model.entity.Track;
 import com.xdpsx.music.repository.LikeRepository;
+import com.xdpsx.music.util.Links;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ public abstract class TrackMapper {
         TrackResponse response = mapToResponse(entity);
         long totalLikes = likeRepository.countByTrackId(entity.getId());
         response.setTotalLikes(totalLikes);
+        Links.addLinksToTrack(response);
         return response;
     }
 }
