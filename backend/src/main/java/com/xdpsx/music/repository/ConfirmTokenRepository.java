@@ -2,9 +2,11 @@ package com.xdpsx.music.repository;
 
 import com.xdpsx.music.model.entity.ConfirmToken;
 import com.xdpsx.music.model.entity.User;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,5 +23,10 @@ public interface ConfirmTokenRepository extends CrudRepository<ConfirmToken, Lon
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay
     );
+
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM ConfirmToken ct WHERE ct.expiredAt < :now OR ct.validatedAt IS NOT NULL")
+    int deleteExpiredTokens(LocalDateTime now);
 
 }
