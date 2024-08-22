@@ -19,6 +19,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+spring-doc:
+  override-with-generic-response: false
 
 server:
   servlet:

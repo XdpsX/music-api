@@ -18,6 +18,7 @@
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
 		<aws.version>1.12.762</aws.version>
 		<jjwt.version>0.11.5</jjwt.version>
+		<spring-doc.version>2.6.0</spring-doc.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -53,6 +54,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${spring-doc.version}</version>
+		</dependency>
+
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
