@@ -22,12 +22,12 @@ import io.swagger.v3.oas.annotations.servers.Server;
         servers = {
                 @Server(
                         description = "Local ENV",
-                        url = "http://localhost:8080"
+                        url = "http://localhost:8080${server.servlet.context-path}"
                 )
         }
 )
 @SecurityScheme(
-        name = "Bear Authentication",
+        name = "JWT",
         scheme = "bearer",
         type = SecuritySchemeType.HTTP,
         bearerFormat = "JWT",

@@ -1,5 +1,6 @@
 package com.xdpsx.music.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/helloworld")
+@Hidden
 public class TestController {
     @GetMapping
     public String helloWolrd(){

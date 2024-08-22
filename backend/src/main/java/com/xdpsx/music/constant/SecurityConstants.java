@@ -3,16 +3,9 @@ package com.xdpsx.music.constant;
 public class SecurityConstants {
     public static final String[] PUBLIC_URLS = {
             "/auth/**",
-            "/v2/api-docs",
-            "/v3/api-docs",
-            "/v3/api-docs/**",
-            "/swagger-resources",
-            "/swagger-resources/**",
-            "/configuration/ui",
-            "/configuration/security",
             "/swagger-ui/**",
-            "/webjars/**",
-            "/swagger-ui.html"
+            "/swagger-ui.html",
+            "/docs/**"
     };
 
     public static final String[] PUBLIC_GET_URLS = {
