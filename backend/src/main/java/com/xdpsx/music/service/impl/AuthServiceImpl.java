@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.constant.Keys;
 import com.xdpsx.music.dto.request.ForgotPasswordRequest;
 import com.xdpsx.music.dto.request.LoginRequest;
 import com.xdpsx.music.dto.request.RegisterRequest;
@@ -15,6 +16,7 @@ import com.xdpsx.music.repository.RoleRepository;
 import com.xdpsx.music.repository.UserRepository;
 import com.xdpsx.music.security.JwtProvider;
 import com.xdpsx.music.service.AuthService;
+import com.xdpsx.music.service.CacheService;
 import com.xdpsx.music.service.EmailService;
 import com.xdpsx.music.service.TokenService;
 import jakarta.mail.MessagingException;
@@ -34,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.xdpsx.music.constant.AppConstants.*;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -44,12 +48,12 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtProvider jwtProvider;
+    private final CacheService cacheService;
 
     @Value("${app.mail.frontend.activation-url}")
     private String activationUrl;
 
-    private final static int NUM_EMAILS_PER_DAY = 5;
-    private final static int CODE_VALID_TIME = 10;
+
 
     @Override
     public void register(RegisterRequest request) throws MessagingException {
@@ -74,18 +78,26 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendActivateAccountEmail(User user) throws MessagingException {
-        List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
-        if (existingTokens.size() >= NUM_EMAILS_PER_DAY){
-            throw new TooManyRequestsException(
-                    String.format("You can send request %s times per day", NUM_EMAILS_PER_DAY));
+        String sendMailKey = Keys.getSendMailKey(user.getId());
+        boolean exists = cacheService.hasKey(sendMailKey);
+        if (exists){
+            throw new TooManyRequestsException(String.format("Please re-send mail after %s minutes", DELAY_SEND_MAIL_MINUTES));
         }
-        String activeCode = tokenService.generateAndSaveConfirmToken(user, CODE_VALID_TIME);
+
+        List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
+        if (existingTokens.size() >= EMAILS_PER_DAY){
+            throw new TooManyRequestsException(
+                    String.format("You can send request %s times per day", EMAILS_PER_DAY));
+        }
+        String activeCode = tokenService.generateAndSaveConfirmToken(user, ACTIVE_CODE_MINUTES);
+
+        cacheService.setValue(sendMailKey, "1", DELAY_SEND_MAIL_MINUTES*60*1000);
 
         Map<String, Object> properties = new HashMap<>();
         properties.put("username", user.getName());
         properties.put("confirmationUrl", activationUrl);
         properties.put("activeCode", activeCode);
-        properties.put("validTime", CODE_VALID_TIME);
+        properties.put("validTime", ACTIVE_CODE_MINUTES);
         emailService.sendEmail(
                 user.getEmail(),
                 EmailTemplateName.ACTIVATE_ACCOUNT,
@@ -193,17 +205,26 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void sendResetPasswordEmail(User user) throws MessagingException {
-        List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
-        if (existingTokens.size() >= NUM_EMAILS_PER_DAY){
-            throw new TooManyRequestsException(
-                    String.format("You can send request %s times per day", NUM_EMAILS_PER_DAY));
+        String sendMailKey = Keys.getSendMailKey(user.getId());
+        boolean exists = cacheService.hasKey(sendMailKey);
+        if (exists){
+            throw new TooManyRequestsException(String.format("Please re-send mail after %s minutes", DELAY_SEND_MAIL_MINUTES));
         }
 
-        String resetCode = tokenService.generateAndSaveConfirmToken(user, CODE_VALID_TIME);
+        List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
+        if (existingTokens.size() >= EMAILS_PER_DAY){
+            throw new TooManyRequestsException(
+                    String.format("You can send request %s times per day", EMAILS_PER_DAY));
+        }
+
+        String resetCode = tokenService.generateAndSaveConfirmToken(user, ACTIVE_CODE_MINUTES);
+
+        cacheService.setValue(sendMailKey, "1", DELAY_SEND_MAIL_MINUTES*60*1000);
+
         Map<String, Object> properties = new HashMap<>();
         properties.put("username", user.getName());
         properties.put("resetCode", resetCode);
-        properties.put("validTime", CODE_VALID_TIME);
+        properties.put("validTime", ACTIVE_CODE_MINUTES);
         emailService.sendEmail(
                 user.getEmail(),
                 EmailTemplateName.RESET_PASSWORD,

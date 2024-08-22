@@ -16,4 +16,7 @@ public class Keys {
     public static String getListeningKey(Long userId){
         return "listening:" + userId;
     }
+    public static String getSendMailKey(Long userId){
+        return "mail:" + userId;
+    }
 }

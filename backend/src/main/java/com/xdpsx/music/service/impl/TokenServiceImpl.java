@@ -1,5 +1,6 @@
 package com.xdpsx.music.service.impl;
 
+import com.xdpsx.music.constant.AppConstants;
 import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.model.entity.ConfirmToken;
 import com.xdpsx.music.model.entity.Token;
@@ -24,8 +25,6 @@ public class TokenServiceImpl implements TokenService {
     private final ConfirmTokenRepository confirmTokenRepository;
     private final TokenRepository tokenRepository;
     private final JwtProvider jwtProvider;
-
-    private final static int ACTIVE_CODE_LENGTH = 6;
 
     @Override
     public String generateAndSaveConfirmToken(User user, int validMinutes) {
@@ -57,7 +56,7 @@ public class TokenServiceImpl implements TokenService {
         String characters = "0123456789";
         StringBuilder codeBuilder = new StringBuilder();
         SecureRandom secureRandom = new SecureRandom();
-        for (int i = 0; i < ACTIVE_CODE_LENGTH; i++){
+        for (int i = 0; i < AppConstants.ACTIVE_CODE_LENGTH; i++){
             int randomIndex = secureRandom.nextInt(characters.length());
             codeBuilder.append(characters.charAt(randomIndex));
         }
