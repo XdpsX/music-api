@@ -19,6 +19,21 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+spring-doc:
+  override-with-generic-response: false
+  api-docs:
+    path: /docs
+#  default-produces-media-type: "application/json"
+#springdoc:
+#  swagger-ui:
+#    disable-swagger-default-url: true
+#    defaultModelRendering: model
+#    requestTimeout: 5000
 
 server:
   servlet:

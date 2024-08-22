@@ -8,9 +8,14 @@ import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.LikeService;
 import com.xdpsx.music.service.TrackService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +24,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Tag(name = "REST APIs for Track")
 @RestController
 @RequestMapping("/tracks")
 @RequiredArgsConstructor
@@ -27,9 +33,11 @@ public class TrackController {
     private final TrackService trackService;
     private final LikeService likeService;
 
-    @PostMapping
+    @Operation(summary = "Create new track", description = "Need Role Admin")
+    @SecurityRequirement(name = "JWT")
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrackResponse> createTrack(
-            @Valid @ModelAttribute TrackRequest request,
+            @ParameterObject @Valid @ModelAttribute TrackRequest request,
             @RequestParam(required = false) MultipartFile image,
             @RequestParam MultipartFile file
     ) {
@@ -37,10 +45,12 @@ public class TrackController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
+    @Operation(summary = "Update track", description = "Need Role Admin")
+    @SecurityRequirement(name = "JWT")
+    @PutMapping(path="/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrackResponse> updateTrack(
             @PathVariable Long id,
-            @Valid @ModelAttribute TrackRequest request,
+            @ParameterObject @Valid @ModelAttribute TrackRequest request,
             @RequestParam(required = false) MultipartFile image,
             @RequestParam(required = false) MultipartFile file
     ) {
@@ -48,15 +58,17 @@ public class TrackController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Get track by id")
     @GetMapping("/{id}")
     public ResponseEntity<TrackResponse> getTrackById(@PathVariable Long id) {
         TrackResponse response = trackService.getTrackById(id);
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Get all tracks")
     @GetMapping
     public ResponseEntity<PageResponse<TrackResponse>> getAllTracks(
-            @Valid TrackParams params
+            @ParameterObject @Valid TrackParams params
     ) {
         PageResponse<TrackResponse> responses = trackService.getAllTracks(params);
         String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
@@ -64,12 +76,16 @@ public class TrackController {
         return ResponseEntity.ok(responses);
     }
 
+    @Operation(summary = "Delete track", description = "Need Role Admin")
+    @SecurityRequirement(name = "JWT")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTrack(@PathVariable Long id) {
         trackService.deleteTrack(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @Operation(summary = "Like track")
+    @SecurityRequirement(name = "JWT")
     @PostMapping("/{trackId}/likes")
     public ResponseEntity<?> likeTrack(@PathVariable Long trackId){
         User loggedUser = userContext.getLoggedUser();
@@ -77,6 +93,8 @@ public class TrackController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Unlike track")
+    @SecurityRequirement(name = "JWT")
     @DeleteMapping("/{trackId}/unlikes")
     public ResponseEntity<?> unlikeTrack(@PathVariable Long trackId){
         User loggedUser = userContext.getLoggedUser();
@@ -84,6 +102,8 @@ public class TrackController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Check user likes tracks")
+    @SecurityRequirement(name = "JWT")
     @GetMapping("/likes/contains")
     public ResponseEntity<List<Boolean>> checkLikesTrack(
             @RequestParam List<Long> trackIds) {
@@ -94,6 +114,8 @@ public class TrackController {
         return ResponseEntity.ok(responses);
     }
 
+    @Operation(summary = "Increase track's listening count")
+    @SecurityRequirement(name = "JWT")
     @PostMapping("/{trackId}/listen")
     public ResponseEntity<?> incrementListeningCount(@PathVariable Long trackId) {
         User loggedUser = userContext.getLoggedUser();

@@ -2,7 +2,10 @@ package com.xdpsx.music.constant;
 
 public class SecurityConstants {
     public static final String[] PUBLIC_URLS = {
-            "/auth/**"
+            "/auth/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/docs/**"
     };
 
     public static final String[] PUBLIC_GET_URLS = {
