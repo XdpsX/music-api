@@ -1,9 +1,9 @@
--- TABLES
+-- 1. TABLES
 -- Table: genres
 CREATE TABLE IF NOT EXISTS genres (
     id SERIAL PRIMARY KEY,
     name VARCHAR(64) NOT NULL UNIQUE,
-    image VARCHAR(255) NOT NULL
+    image VARCHAR(255)
 );
 
 -- Table: albums
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS albums (
     name VARCHAR(128) NOT NULL,
     image VARCHAR(255),
     release_date DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    genre_id INTEGER REFERENCES genres(id)
+    genre_id INTEGER REFERENCES genres(id) ON DELETE SET NULL
 );
 
 -- Table: artists
@@ -33,10 +33,11 @@ CREATE TABLE IF NOT EXISTS tracks (
     duration_ms INTEGER NOT NULL,
     image VARCHAR(255),
     url VARCHAR(255) NOT NULL,
+    listening_count INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     track_number INTEGER,
     album_id BIGINT REFERENCES albums(id) ON DELETE SET NULL,
-    genre_id INTEGER REFERENCES genres(id)
+    genre_id INTEGER REFERENCES genres(id) ON DELETE SET NULL
 );
 
 -- Table: roles
@@ -118,13 +119,18 @@ CREATE TABLE IF NOT EXISTS artist_tracks (
     PRIMARY KEY (artist_id, track_id)
 );
 
--- Add roles Data
-INSERT INTO roles (name)
-VALUES 
-('ADMIN'), 
-('USER');
+-- 2. INDEXES
+CREATE INDEX idx_tokens_access_token ON tokens (access_token);
+CREATE INDEX idx_tokens_refresh_token ON tokens (refresh_token);
 
--- TRIGGERS
+CREATE INDEX idx_tracks_genre_id ON tracks (genre_id);
+CREATE INDEX idx_tracks_album_id ON tracks (album_id);
+
+CREATE INDEX idx_tracks_album_id_track_number ON tracks(album_id, track_number);
+
+CREATE INDEX idx_playlists_id_owner_id ON playlists(id, owner_id);
+
+-- 3. TRIGGERS
 -- When user creates new confirm token, set revoked of old confirm tokens = true
 CREATE OR REPLACE FUNCTION revoke_old_confirm_tokens()
 RETURNS TRIGGER AS $$
@@ -232,14 +238,12 @@ BEFORE DELETE ON playlist_tracks
 FOR EACH ROW
 EXECUTE FUNCTION adjust_playlist_tracks_track_numbers_after_deletion();
 
--- INDEXES
-CREATE INDEX idx_tokens_access_token ON tokens (access_token);
-CREATE INDEX idx_tokens_refresh_token ON tokens (refresh_token);
+-- 4. Insert Data
+INSERT INTO roles (name)
+VALUES 
+('ADMIN'), 
+('USER');
 
--- CREATE INDEX idx_tracks_name ON tracks (name);
-CREATE INDEX idx_tracks_genre_id ON tracks (genre_id);
-CREATE INDEX idx_tracks_album_id ON tracks (album_id);
-
-CREATE INDEX idx_tracks_album_id_track_number ON tracks(album_id, track_number);
-
-CREATE INDEX idx_playlists_id_owner_id ON playlists(id, owner_id);
+-- All default users password is "password"
+INSERT INTO users (name, avatar, email, password, account_locked, enabled, role_id)
+VALUES ('Admin', NULL, 'admin@xdpsx.com', '$2a$12$WmPNKXdVUNlK/9qFpG69wOD8O0iJ86UGRXeFioBnoB9f4zXXhbwtO', false, true, 1);

@@ -1,2 +1,0 @@
-ALTER TABLE tracks
-ADD listening_count INTEGER NOT NULL DEFAULT 0;
