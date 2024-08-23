@@ -2,12 +2,12 @@ package com.xdpsx.music.controller;
 
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.PlaylistRequest;
+import com.xdpsx.music.dto.request.PlaylistTrackExistsRequest;
 import com.xdpsx.music.dto.request.params.PlaylistParam;
 import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.PlaylistResponse;
+import com.xdpsx.music.dto.response.PlaylistTrackExistsResponse;
 import com.xdpsx.music.dto.response.TrackResponse;
-import com.xdpsx.music.model.entity.User;
-import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.PlaylistService;
 import com.xdpsx.music.service.PlaylistTrackService;
 import com.xdpsx.music.service.TrackService;
@@ -22,13 +22,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.List;
+
 @Tag(name = "REST APIs for Playlist")
 @SecurityRequirement(name = "JWT")
 @RestController
 @RequestMapping("/playlists")
 @RequiredArgsConstructor
 public class PlaylistController {
-    private final UserContext userContext;
     private final PlaylistService playlistService;
     private final PlaylistTrackService playlistTrackService;
     private final TrackService trackService;
@@ -38,9 +39,25 @@ public class PlaylistController {
     public ResponseEntity<PlaylistResponse> createPlaylist(
             @Valid @RequestBody PlaylistRequest request
     ){
-        User loggedUser = userContext.getLoggedUser();
-        PlaylistResponse response = playlistService.createPlaylist(request, loggedUser);
+        PlaylistResponse response = playlistService.createPlaylist(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Get playlist by id")
+    @GetMapping("/{id}")
+    public ResponseEntity<PlaylistResponse> getPlaylistById(@PathVariable Long id) {
+        PlaylistResponse response = playlistService.getPlaylistById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Update playlist")
+    @PutMapping("/{id}")
+    public ResponseEntity<PlaylistResponse> updatePlaylist(
+            @PathVariable Long id,
+            @Valid @RequestBody PlaylistRequest request
+    ) {
+        PlaylistResponse response = playlistService.updatePlaylist(id, request);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Delete playlist by id")
@@ -48,8 +65,7 @@ public class PlaylistController {
     public ResponseEntity<Void> deletePlaylist(
             @PathVariable Long playlistId
     ){
-        User loggedUser = userContext.getLoggedUser();
-        playlistService.deletePlaylist(playlistId, loggedUser);
+        playlistService.deletePlaylist(playlistId);
         return ResponseEntity.noContent().build();
     }
 
@@ -58,8 +74,7 @@ public class PlaylistController {
     public ResponseEntity<PageResponse<PlaylistResponse>> getAllUserPlaylists(
             @ParameterObject @Valid PlaylistParam params
     ){
-        User loggedUser = userContext.getLoggedUser();
-        PageResponse<PlaylistResponse> responses = playlistService.getAllUserPlaylists(params, loggedUser);
+        PageResponse<PlaylistResponse> responses = playlistService.getAllUserPlaylists(params);
         String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
         responses.addPaginationLinks(baseUri);
         return ResponseEntity.ok(responses);
@@ -88,6 +103,15 @@ public class PlaylistController {
         PageResponse<TrackResponse> responses = trackService.getTracksByPlaylist(playlistId, params);
         String baseUri = ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString();
         responses.addPaginationLinks(baseUri);
+        return ResponseEntity.ok(responses);
+    }
+
+    @Operation(summary = "Check tracks in user playlists")
+    @PostMapping("/tracks/exists")
+    public ResponseEntity<List<PlaylistTrackExistsResponse>> checkTracksInPlaylists(
+            @Valid @RequestBody PlaylistTrackExistsRequest request) {
+        List<PlaylistTrackExistsResponse> responses = playlistService.checkTracksInPlaylists(
+                request.getPlaylistIds(), request.getTrackIds());
         return ResponseEntity.ok(responses);
     }
 }
