@@ -15,6 +15,7 @@ import com.xdpsx.music.service.CacheService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.util.Compare;
+import com.xdpsx.music.util.I18nUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -45,6 +46,7 @@ public class TrackServiceImpl implements TrackService {
     private final PlaylistRepository playlistRepository;
     private final UserContext userContext;
     private final CacheService cacheService;
+    private final I18nUtils i18nUtils;
 
     @Override
     @CachePut(value = Keys.TRACK_ITEM, key = "#result.id")
@@ -144,7 +146,7 @@ public class TrackServiceImpl implements TrackService {
     @Cacheable(cacheNames = Keys.ARTIST_TRACKS, key = "#artistId + '_' + #params")
     public PageResponse<TrackResponse> getTracksByArtistId(Long artistId, TrackParams params) {
         Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getArtistNotFoundMsg(artistId)));
 
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findTracksByArtist(
@@ -157,7 +159,7 @@ public class TrackServiceImpl implements TrackService {
     @Cacheable(cacheNames = Keys.ALBUM_TRACKS, key = "#albumId + '_' + #params")
     public PageResponse<TrackResponse> getTracksByAlbumId(Long albumId, TrackParams params) {
         Album album = albumRepository.findById(albumId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", albumId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getAlbumNotFoundMsg(albumId)));
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findTracksByAlbum(
                 pageable, params.getSearch(), params.getSort(), album.getId()
@@ -178,9 +180,7 @@ public class TrackServiceImpl implements TrackService {
     public PageResponse<TrackResponse> getTracksByPlaylist(Long playlistId, TrackParams params) {
         User loggedUser = userContext.getLoggedUser();
         Playlist playlist = playlistRepository.findByIdAndOwnerId(playlistId, loggedUser.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format("Playlist with id=%s not found", playlistId)
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getPlaylistNotFoundMsg(playlistId)));
 
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Track> trackPage = trackRepository.findTracksInPlaylist(
@@ -208,7 +208,7 @@ public class TrackServiceImpl implements TrackService {
     private List<Artist> getArtists(List<Long> artistIds) {
         return artistIds.stream()
                 .map(artistId -> artistRepository.findById(artistId)
-                        .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId))))
+                        .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getArtistNotFoundMsg(artistId))))
                 .collect(Collectors.toList());
     }
 
@@ -217,14 +217,14 @@ public class TrackServiceImpl implements TrackService {
         track.setTrackNumber(trackNumber+1);
     }
 
-    private Genre getGenre(Integer request) {
-        return genreRepository.findById(request)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found genre with ID=%s", request)));
+    private Genre getGenre(Integer genreId) {
+        return genreRepository.findById(genreId)
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getGenreNotFoundMsg(genreId)));
     }
 
     private Album getAlbumIfExists(Long albumId) {
         return albumId == null ? null : albumRepository.findById(albumId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", albumId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getAlbumNotFoundMsg(albumId)));
     }
 
     private void updateTrackDetails(Track trackToUpdate, TrackRequest request, MultipartFile newImage, MultipartFile newFile) {
@@ -270,13 +270,13 @@ public class TrackServiceImpl implements TrackService {
 
     private Album getAlbum(Long albumId) {
         return albumRepository.findById(albumId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", albumId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getAlbumNotFoundMsg(albumId)));
     }
 
 
-    private Track getTrack(Long id) {
-        return trackRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found track with ID=%s", id)));
+    private Track getTrack(Long trackId) {
+        return trackRepository.findById(trackId)
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getTrackNotFoundMsg(trackId)));
     }
 
     private String uploadFile(MultipartFile file, String folder) {

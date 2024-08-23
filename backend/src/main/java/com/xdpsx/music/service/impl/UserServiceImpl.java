@@ -14,6 +14,7 @@ import com.xdpsx.music.mapper.UserMapper;
 import com.xdpsx.music.repository.UserRepository;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.service.UserService;
+import com.xdpsx.music.util.I18nUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,14 +34,15 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final FileService fileService;
+    private final I18nUtils i18nUtils;
 
     @Override
     public void changePassword(ChangePasswordRequest request, User loggedUser) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new BadRequestException("Password are not the same");
+            throw new BadRequestException(i18nUtils.getNotSamePwMsg());
         }
         if (!passwordEncoder.matches(request.getCurrentPassword(), loggedUser.getPassword())) {
-            throw new BadRequestException("Wrong password");
+            throw new BadRequestException(i18nUtils.getWrongPwMsg());
         }
         loggedUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(loggedUser);
@@ -76,8 +78,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void lockUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(String.format("User with id=%s not found", userId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getUserNotFoundMsg(userId)));
         if (!user.isAccountLocked()){
             user.setAccountLocked(true);
             userRepository.save(user);
@@ -87,8 +88,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void unlockUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(String.format("User with id=%s not found", userId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getUserNotFoundMsg(userId)));
         if (user.isAccountLocked()){
             user.setAccountLocked(false);
             userRepository.save(user);
@@ -98,8 +98,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUserById(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(String.format("User with id=%s not found", userId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getUserNotFoundMsg(userId)));
         userRepository.delete(user);
         if (user.getAvatar() != null){
             fileService.deleteFileByUrl(user.getAvatar());

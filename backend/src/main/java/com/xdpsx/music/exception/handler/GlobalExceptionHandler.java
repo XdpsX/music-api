@@ -1,7 +1,9 @@
 package com.xdpsx.music.exception.handler;
 
 import com.xdpsx.music.dto.common.ErrorDetails;
+import com.xdpsx.music.util.I18nUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,7 +22,10 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final I18nUtils i18nUtils;
 
     @ExceptionHandler(LockedException.class)
     @ResponseStatus(HttpStatus.LOCKED)
@@ -51,7 +56,7 @@ public class GlobalExceptionHandler {
     public ErrorDetails handleBadCredentials(HttpServletRequest request, BadCredentialsException e){
         log.error(e.getMessage(), e);
 
-        ErrorDetails errorDetails = new ErrorDetails("Email and/or Password is incorrect");
+        ErrorDetails errorDetails = new ErrorDetails(i18nUtils.getWrongCredMsg());
         errorDetails.setStatus(HttpStatus.UNAUTHORIZED.value());
         errorDetails.setPath(request.getServletPath());
 
@@ -86,7 +91,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorDetails handleMaxUploadSizeExceeded(HttpServletRequest request, MaxUploadSizeExceededException e) {
         log.error(e.getMessage(), e);
-        ErrorDetails errorDetails = new ErrorDetails("Please upload a file with a smaller size");
+        ErrorDetails errorDetails = new ErrorDetails(i18nUtils.getMaxUploadSizeMsg());
         errorDetails.setStatus(HttpStatus.BAD_REQUEST.value());
         errorDetails.setPath(request.getServletPath());
         return errorDetails;

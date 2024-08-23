@@ -19,6 +19,7 @@ import com.xdpsx.music.service.AuthService;
 import com.xdpsx.music.service.CacheService;
 import com.xdpsx.music.service.EmailService;
 import com.xdpsx.music.service.TokenService;
+import com.xdpsx.music.util.I18nUtils;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,18 +50,17 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtProvider jwtProvider;
     private final CacheService cacheService;
+    private final I18nUtils i18nUtils;
 
     @Value("${app.mail.frontend.activation-url}")
     private String activationUrl;
 
-
-
     @Override
     public void register(RegisterRequest request) throws MessagingException {
         Role userRole = roleRepository.findByName(Role.USER)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found Role %s", Role.USER)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getRoleNotFoundMsg(Role.USER)));
         if (userRepository.existsByEmail(request.getEmail())){
-            throw new DuplicateResourceException(String.format("Email %s has already existed", request.getEmail()));
+            throw new DuplicateResourceException(i18nUtils.getUserExistsMsg(request.getEmail()));
         }
         User user = User.builder()
                 .name(request.getName())
@@ -81,13 +81,12 @@ public class AuthServiceImpl implements AuthService {
         String sendMailKey = Keys.getSendMailKey(user.getId());
         boolean exists = cacheService.hasKey(sendMailKey);
         if (exists){
-            throw new TooManyRequestsException(String.format("Please re-send mail after %s minutes", DELAY_SEND_MAIL_MINUTES));
+            throw new TooManyRequestsException(i18nUtils.getResendMailMsg(DELAY_SEND_MAIL_MINUTES));
         }
 
         List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
         if (existingTokens.size() >= EMAILS_PER_DAY){
-            throw new TooManyRequestsException(
-                    String.format("You can send request %s times per day", EMAILS_PER_DAY));
+            throw new TooManyRequestsException(i18nUtils.getLimitMailMsg(EMAILS_PER_DAY));
         }
         String activeCode = tokenService.generateAndSaveConfirmToken(user, ACTIVE_CODE_MINUTES);
 
@@ -113,11 +112,11 @@ public class AuthServiceImpl implements AuthService {
         if (LocalDateTime.now().isAfter(confirmToken.getExpiredAt())
                 || confirmToken.isRevoked()
                 || confirmToken.getValidatedAt() != null) {
-            throw new BadRequestException("Active code has expired");
+            throw new BadRequestException(i18nUtils.getActiveCodeExpiredMsg());
         }
         var user = confirmToken.getUser();
         if (user.isEnabled()){
-            throw new BadRequestException("Account has already activated");
+            throw new BadRequestException(i18nUtils.getActivatedAccountMsg());
         }
         user.setEnabled(true);
         var savedUser = userRepository.save(user);
@@ -177,13 +176,12 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(ForgotPasswordRequest request) throws MessagingException {
         String email = request.getEmail();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(String.format("Email = %s not found", email)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getUserExistsMsg(email)));
         if (!user.isEnabled()) {
-            throw new DisabledException(String.format("User with email=%s is not active", email));
+            throw new DisabledException(i18nUtils.getNotActiveAccountMsg(email));
         }
         if (user.isAccountLocked()) {
-            throw new LockedException(String.format("User with email=%s is locked", email));
+            throw new LockedException(i18nUtils.getLockedAccountMsg(email));
         }
         sendResetPasswordEmail(user);
     }
@@ -195,7 +193,7 @@ public class AuthServiceImpl implements AuthService {
         if (LocalDateTime.now().isAfter(confirmToken.getExpiredAt())
                 || confirmToken.isRevoked()
                 || confirmToken.getValidatedAt() != null) {
-            throw new BadRequestException("Reset code has expired");
+            throw new BadRequestException(i18nUtils.getResetCodeExpiredMsg());
         }
         var userToUpdate = confirmToken.getUser();
         userToUpdate.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -208,13 +206,12 @@ public class AuthServiceImpl implements AuthService {
         String sendMailKey = Keys.getSendMailKey(user.getId());
         boolean exists = cacheService.hasKey(sendMailKey);
         if (exists){
-            throw new TooManyRequestsException(String.format("Please re-send mail after %s minutes", DELAY_SEND_MAIL_MINUTES));
+            throw new TooManyRequestsException(i18nUtils.getResendMailMsg(DELAY_SEND_MAIL_MINUTES));
         }
 
         List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
         if (existingTokens.size() >= EMAILS_PER_DAY){
-            throw new TooManyRequestsException(
-                    String.format("You can send request %s times per day", EMAILS_PER_DAY));
+            throw new TooManyRequestsException(i18nUtils.getLimitMailMsg(EMAILS_PER_DAY));
         }
 
         String resetCode = tokenService.generateAndSaveConfirmToken(user, ACTIVE_CODE_MINUTES);

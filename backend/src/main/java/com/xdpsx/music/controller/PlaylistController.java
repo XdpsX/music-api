@@ -5,12 +5,14 @@ import com.xdpsx.music.dto.request.PlaylistRequest;
 import com.xdpsx.music.dto.request.PlaylistTrackExistsRequest;
 import com.xdpsx.music.dto.request.params.PlaylistParam;
 import com.xdpsx.music.dto.request.params.TrackParams;
+import com.xdpsx.music.dto.response.MessageResponse;
 import com.xdpsx.music.dto.response.PlaylistResponse;
 import com.xdpsx.music.dto.response.PlaylistTrackExistsResponse;
 import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.service.PlaylistService;
 import com.xdpsx.music.service.PlaylistTrackService;
 import com.xdpsx.music.service.TrackService;
+import com.xdpsx.music.util.I18nUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +35,7 @@ public class PlaylistController {
     private final PlaylistService playlistService;
     private final PlaylistTrackService playlistTrackService;
     private final TrackService trackService;
+    private final I18nUtils i18nUtils;
 
     @Operation(summary = "Create new playlist")
     @PostMapping
@@ -82,16 +85,16 @@ public class PlaylistController {
 
     @Operation(summary = "Add track to playlist")
     @PostMapping("/{playlistId}/add/{trackId}")
-    public ResponseEntity<Void> addTrackToPlaylist(@PathVariable Long playlistId, @PathVariable Long trackId) {
+    public ResponseEntity<MessageResponse> addTrackToPlaylist(@PathVariable Long playlistId, @PathVariable Long trackId) {
         playlistTrackService.addTrackToPlaylist(playlistId, trackId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new MessageResponse(i18nUtils.getAddTrackPlaylistMsg()));
     }
 
     @Operation(summary = "Remove track from playlist")
     @DeleteMapping("/{playlistId}/remove/{trackId}")
-    public ResponseEntity<Void> removeTrackFromPlaylist(@PathVariable Long playlistId, @PathVariable Long trackId) {
+    public ResponseEntity<MessageResponse> removeTrackFromPlaylist(@PathVariable Long playlistId, @PathVariable Long trackId) {
         playlistTrackService.removeTrackFromPlaylist(playlistId, trackId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new MessageResponse(i18nUtils.getRemoveTrackPlaylistMsg()));
     }
 
     @Operation(summary = "Get playlist's tracks")

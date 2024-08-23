@@ -8,6 +8,7 @@ import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.LikeService;
 import com.xdpsx.music.service.TrackService;
+import com.xdpsx.music.util.I18nUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +33,7 @@ public class TrackController {
     private final UserContext userContext;
     private final TrackService trackService;
     private final LikeService likeService;
+    private final I18nUtils i18nUtils;
 
     @Operation(summary = "Create new track", description = "Need Role Admin")
     @SecurityRequirement(name = "JWT")
@@ -90,7 +92,7 @@ public class TrackController {
     public ResponseEntity<?> likeTrack(@PathVariable Long trackId){
         User loggedUser = userContext.getLoggedUser();
         likeService.likeTrack(trackId, loggedUser);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return ResponseEntity.ok(i18nUtils.getLikeTrackSucMsg());
     }
 
     @Operation(summary = "Unlike track")
@@ -99,7 +101,7 @@ public class TrackController {
     public ResponseEntity<?> unlikeTrack(@PathVariable Long trackId){
         User loggedUser = userContext.getLoggedUser();
         likeService.unlikeTrack(trackId, loggedUser);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(i18nUtils.getUnlikeTrackSucMsg());
     }
 
     @Operation(summary = "Check user likes tracks")
