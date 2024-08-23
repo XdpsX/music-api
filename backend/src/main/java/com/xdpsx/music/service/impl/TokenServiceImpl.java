@@ -9,6 +9,7 @@ import com.xdpsx.music.repository.ConfirmTokenRepository;
 import com.xdpsx.music.repository.TokenRepository;
 import com.xdpsx.music.security.JwtProvider;
 import com.xdpsx.music.service.TokenService;
+import com.xdpsx.music.util.I18nUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class TokenServiceImpl implements TokenService {
     private final ConfirmTokenRepository confirmTokenRepository;
     private final TokenRepository tokenRepository;
     private final JwtProvider jwtProvider;
+    private final I18nUtils i18nUtils;
 
     @Override
     public String generateAndSaveConfirmToken(User user, int validMinutes) {
@@ -42,7 +44,7 @@ public class TokenServiceImpl implements TokenService {
     @Override
     public ConfirmToken findConfirmTokenByCode(String code) {
         return confirmTokenRepository.findByCode(code)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found active code %s", code)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getConfirmTokenNotFoundMsg(code)));
     }
 
     @Override

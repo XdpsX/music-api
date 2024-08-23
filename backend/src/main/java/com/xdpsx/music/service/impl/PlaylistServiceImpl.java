@@ -16,6 +16,7 @@ import com.xdpsx.music.repository.PlaylistRepository;
 import com.xdpsx.music.repository.PlaylistTrackRepository;
 import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.PlaylistService;
+import com.xdpsx.music.util.I18nUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,14 +33,13 @@ public class PlaylistServiceImpl implements PlaylistService {
     private final PageMapper pageMapper;
     private final PlaylistRepository playlistRepository;
     private final PlaylistTrackRepository playlistTrackRepository;
+    private final I18nUtils i18nUtils;
 
     @Override
     public PlaylistResponse createPlaylist(PlaylistRequest request) {
         User loggedUser = userContext.getLoggedUser();
         if (playlistRepository.existsByOwnerIdAndName(loggedUser.getId(), request.getName())){
-            throw new DuplicateResourceException(
-                    String.format("Playlist with name=%s already exists", request.getName())
-            );
+            throw new DuplicateResourceException(i18nUtils.getPlaylistExistsMsg(request.getName()));
         }
         Playlist playlist = playlistMapper.fromRequestToEntity(request);
         playlist.setOwner(loggedUser);
@@ -57,9 +57,7 @@ public class PlaylistServiceImpl implements PlaylistService {
     private Playlist getPlaylist(Long playlistId) {
         User loggedUser = userContext.getLoggedUser();
         return playlistRepository.findByIdAndOwnerId(playlistId, loggedUser.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format("Playlist with id=%s not found", playlistId)
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getPlaylistNotFoundMsg(playlistId)));
     }
 
     @Override
@@ -98,7 +96,8 @@ public class PlaylistServiceImpl implements PlaylistService {
         // Fetch and map playlist tracks only for the user's playlists
         if (!userPlaylists.isEmpty()) {
             List<Long> userPlaylistIds = userPlaylists.stream().map(Playlist::getId).toList();
-            List<PlaylistTrack> playlistTracks = playlistTrackRepository.findByPlaylistIdInAndTrackIdIn(userPlaylistIds, trackIds);
+            List<PlaylistTrack> playlistTracks = playlistTrackRepository.findByPlaylistIdInAndTrackIdIn(
+                    userPlaylistIds, trackIds);
             for (PlaylistTrack pt : playlistTracks) {
                 playlistTrackMap
                         .computeIfAbsent(pt.getPlaylist().getId(), k -> new HashSet<>())

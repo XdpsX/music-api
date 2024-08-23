@@ -17,6 +17,7 @@ import com.xdpsx.music.repository.GenreRepository;
 import com.xdpsx.music.service.AlbumService;
 import com.xdpsx.music.service.FileService;
 import com.xdpsx.music.util.Compare;
+import com.xdpsx.music.util.I18nUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -42,6 +43,7 @@ public class AlbumServiceImpl implements AlbumService {
     private final AlbumRepository albumRepository;
     private final GenreRepository genreRepository;
     private final ArtistRepository artistRepository;
+    private final I18nUtils i18nUtils;
 
     @CachePut(value = Keys.ALBUM_ITEM, key = "#result.id")
     @Caching(evict = {
@@ -155,14 +157,14 @@ public class AlbumServiceImpl implements AlbumService {
 
     private Genre fetchGenreById(Integer genreId) {
         return genreRepository.findById(genreId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found genre with ID=%s", genreId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getGenreNotFoundMsg(genreId)));
     }
 
     @Override
     @Cacheable(cacheNames = Keys.ARTIST_ALBUMS, key = "#artistId + '_' + #params")
     public PageResponse<AlbumResponse> getAlbumsByArtistId(Long artistId, AlbumParams params) {
         Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getArtistNotFoundMsg(artistId)));
         Pageable pageable = PageRequest.of(params.getPageNum() - 1, params.getPageSize());
         Page<Album> albumPage = albumRepository.findAlbumsByArtist(
                 pageable, params.getSearch(), params.getSort(), artist.getId()
@@ -170,15 +172,15 @@ public class AlbumServiceImpl implements AlbumService {
         return pageMapper.toAlbumPageResponse(albumPage);
     }
 
-    private Album fetchAlbumById(Long id) {
-        return albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found album with ID=%s", id)));
+    private Album fetchAlbumById(Long albumId) {
+        return albumRepository.findById(albumId)
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getAlbumNotFoundMsg(albumId)));
     }
 
     private List<Artist> getArtistsByIds(List<Long> artistIds) {
         return artistIds.stream()
                 .map(artistId -> artistRepository.findById(artistId)
-                        .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", artistId))))
+                        .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getArtistNotFoundMsg(artistId))))
                 .collect(Collectors.toList());
     }
 

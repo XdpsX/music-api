@@ -12,6 +12,7 @@ import com.xdpsx.music.mapper.ArtistMapper;
 import com.xdpsx.music.repository.ArtistRepository;
 import com.xdpsx.music.service.ArtistService;
 import com.xdpsx.music.service.FileService;
+import com.xdpsx.music.util.I18nUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -33,6 +34,7 @@ public class ArtistServiceImpl implements ArtistService {
     private final ArtistMapper artistMapper;
     private final PageMapper pageMapper;
     private final ArtistRepository artistRepository;
+    private final I18nUtils i18nUtils;
 
     @Override
     @Cacheable(cacheNames = Keys.ARTISTS, key = "#params")
@@ -69,7 +71,7 @@ public class ArtistServiceImpl implements ArtistService {
     @Transactional
     public ArtistResponse updateArtist(Long id, ArtistRequest request, MultipartFile image) {
         Artist artist = artistRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", id)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getArtistNotFoundMsg(id)));
         artist.setName(request.getName());
         artist.setGender(request.getGender());
         artist.setDescription(request.getDescription());
@@ -93,7 +95,7 @@ public class ArtistServiceImpl implements ArtistService {
     @Cacheable(value = Keys.ARTIST_ITEM, key = "#id")
     public ArtistResponse getArtistById(Long id) {
         Artist artist = artistRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", id)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getArtistNotFoundMsg(id)));
         return artistMapper.fromEntityToResponse(artist);
     }
 
@@ -105,7 +107,7 @@ public class ArtistServiceImpl implements ArtistService {
     @Transactional
     public void deleteArtist(Long id) {
         Artist artist = artistRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Not found artist with ID=%s", id)));
+                .orElseThrow(() -> new ResourceNotFoundException(i18nUtils.getArtistNotFoundMsg(id)));
         artistRepository.delete(artist);
         fileService.deleteFileByUrl(artist.getAvatar());
     }
