@@ -94,6 +94,36 @@ public class I18nUtils {
     public String getLockedAccountMsg(String email){
         return getMessage(MessageKeys.LOCKED_ACCOUNT, email);
     }
+    public String getChangePwSucMsg(){
+        return getMessage(MessageKeys.CHANGE_PW_SUC);
+    }
+    public String getLockAccountSucMsg(){
+        return getMessage(MessageKeys.LOCK_ACCOUNT_SUC);
+    }
+    public String getUnlockAccountSucMsg(){
+        return getMessage(MessageKeys.UNLOCK_ACCOUNT_SUC);
+    }
+
+    public String getLikeTrackSucMsg(){
+        return getMessage(MessageKeys.LIKE_TRACK_SUC);
+    }
+    public String getUnlikeTrackSucMsg(){
+        return getMessage(MessageKeys.UNLIKE_TRACK_SUC);
+    }
+
+    public String getAddTrackPlaylistMsg(){
+        return getMessage(MessageKeys.ADD_TRACK_TO_PLAYLIST);
+    }
+    public String getRemoveTrackPlaylistMsg(){
+        return getMessage(MessageKeys.REMOVE_TRACK_FROM_PLAYLIST);
+    }
+
+    public String getWrongCredMsg(){
+        return getMessage(MessageKeys.ERROR_WRONG_CRED);
+    }
+    public String getMaxUploadSizeMsg(){
+        return getMessage(MessageKeys.ERROR_MAX_UPLOAD_SIZE);
+    }
 
     public String getMessage(String msgKey, Object... params) {
         return messageSource.getMessage(msgKey, params, LocaleContextHolder.getLocale());

@@ -5,6 +5,7 @@ import com.xdpsx.music.dto.request.ChangePasswordRequest;
 import com.xdpsx.music.dto.request.UserProfileRequest;
 import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.request.params.UserParams;
+import com.xdpsx.music.dto.response.MessageResponse;
 import com.xdpsx.music.dto.response.TrackResponse;
 import com.xdpsx.music.dto.response.UserProfileResponse;
 import com.xdpsx.music.dto.response.UserResponse;
@@ -12,6 +13,7 @@ import com.xdpsx.music.model.entity.User;
 import com.xdpsx.music.security.UserContext;
 import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.service.UserService;
+import com.xdpsx.music.util.I18nUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,15 +36,16 @@ public class UserController {
     private final UserContext userContext;
     private final UserService userService;
     private final TrackService trackService;
+    private final I18nUtils i18nUtils;
 
     @Operation(summary = "Change account password")
     @PatchMapping("/change-password")
-    public ResponseEntity<Void> changePassword(
+    public ResponseEntity<MessageResponse> changePassword(
             @Valid @RequestBody ChangePasswordRequest request
     ){
         User loggedUser = userContext.getLoggedUser();
         userService.changePassword(request, loggedUser);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new MessageResponse(i18nUtils.getChangePwSucMsg()));
     }
 
     @Operation(summary = "Get user profile")
@@ -65,16 +68,16 @@ public class UserController {
 
     @Operation(summary = "Lock user account", description = "Need Role Admin")
     @PutMapping("/{userId}/lock")
-    public ResponseEntity<Void> lockUser(@PathVariable Long userId) {
+    public ResponseEntity<MessageResponse> lockUser(@PathVariable Long userId) {
         userService.lockUser(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new MessageResponse(i18nUtils.getLockAccountSucMsg()));
     }
 
     @Operation(summary = "Unlock user account", description = "Need Role Admin")
     @PutMapping("/{userId}/unlock")
-    public ResponseEntity<Void> unlockUser(@PathVariable Long userId) {
+    public ResponseEntity<MessageResponse> unlockUser(@PathVariable Long userId) {
         userService.unlockUser(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new MessageResponse(i18nUtils.getUnlockAccountSucMsg()));
     }
 
     @Operation(summary = "Delete user by id", description = "Need Role Admin")
