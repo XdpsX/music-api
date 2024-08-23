@@ -27,7 +27,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @Tag(name = "REST APIs for User")
 @SecurityRequirement(name = "JWT")
 @RestController
-@RequestMapping(path="/users", produces = "application/json", consumes = "application/json")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
