@@ -38,7 +38,7 @@ public class GenreController {
     @PostMapping(path="/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GenreResponse> createGenre(
             @ParameterObject @Valid @ModelAttribute GenreRequest request,
-            @RequestParam MultipartFile image
+            @RequestParam(required = false) MultipartFile image
             ){
         GenreResponse response = genreService.createGenre(request, image);
         return new ResponseEntity<>(response, HttpStatus.CREATED);

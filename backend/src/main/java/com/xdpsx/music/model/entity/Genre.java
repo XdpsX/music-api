@@ -19,7 +19,6 @@ public class Genre {
     @Column(length = 64, nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false)
     private String image;
 
     @OneToMany(mappedBy = "genre")
