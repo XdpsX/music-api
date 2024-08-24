@@ -39,4 +39,10 @@ public class GenreResponse extends RepresentationModel<GenreResponse> implements
             this.linksMap.put(link.getRel().value(), link.getHref());
         }
     }
+
+    public GenreResponse(Integer id, String name, String image) {
+        this.id = id;
+        this.name = name;
+        this.image = image;
+    }
 }

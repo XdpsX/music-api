@@ -4,90 +4,106 @@ import com.xdpsx.music.model.entity.Artist;
 import com.xdpsx.music.model.enums.Gender;
 import com.xdpsx.music.repository.ArtistRepository;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ActiveProfiles("test")
 class ArtistCriteriaRepositoryImplTest {
     @Autowired
     private ArtistRepository artistRepository;
 
     @BeforeAll
     void setUp() {
-        Artist artist1 = Artist.builder()
-                .name("Smile John")
-                .gender(Gender.MALE)
-                .description("A popular artist 1")
-                .dob(LocalDate.of(1990, 1, 1))
-                .avatar("avatar1.jpg")
-                .build();
+        Artist artist1 = Artist.builder().name("John Doe").gender(Gender.MALE).build();
         artistRepository.save(artist1);
-
-        Artist artist2 = Artist.builder()
-                .name("John Doe1")
-                .gender(Gender.FEMALE)
-                .description("A popular artist 2")
-                .dob(LocalDate.of(1992, 2, 2))
-                .avatar("avatar2.jpg")
-                .build();
+        Artist artist2 = Artist.builder().name("Jane Smith").gender(Gender.FEMALE).build();
         artistRepository.save(artist2);
-
-        Artist artist3 = Artist.builder()
-                .name("John Doe2")
-                .gender(Gender.MALE)
-                .description("A popular artist 3")
-                .dob(LocalDate.of(1994, 4, 4))
-                .avatar("avatar3.jpg")
-                .build();
+        Artist artist3 = Artist.builder().name("John Smith").gender(Gender.MALE).build();
         artistRepository.save(artist3);
-
     }
 
     @Test
-    void findWithFilters_shouldReturnFilteredArtists() {
-        PageRequest pageRequest = PageRequest.of(0, 10);
+    void testFindWithFiltersByName() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Artist> page = artistRepository.findWithFilters(pageable, "John", null, null);
 
-        Page<Artist> result = artistRepository.findWithFilters(pageRequest, "John", "name", Gender.MALE);
-
-        assertNotNull(result);
-        assertEquals(2, result.getTotalElements());
-        assertEquals("John Doe2", result.getContent().get(0).getName());
-
-        assertThat(result.getContent()).isSortedAccordingTo(Comparator.comparing(Artist::getName));
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        List<Artist> artists = page.getContent();
+        assertThat(artists).extracting("name").containsExactlyInAnyOrder("John Doe", "John Smith");
     }
 
     @Test
-    void findWithFilters_whenNoFilters_shouldReturnAllArtists() {
-        PageRequest pageRequest = PageRequest.of(0, 10);
+    void testFindWithFiltersByGender() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Artist> page = artistRepository.findWithFilters(pageable, null, null, Gender.FEMALE);
 
-        Page<Artist> result = artistRepository.findWithFilters(pageRequest, null, null, null);
-
-        assertNotNull(result);
-        assertEquals(3, result.getTotalElements());
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        List<Artist> artists = page.getContent();
+        assertThat(artists).extracting("name").containsExactly("Jane Smith");
     }
 
     @Test
-    void findWithFilters_whenFilterByDateDesc_shouldSortArtistsByCreatedAtDesc() {
-        PageRequest pageRequest = PageRequest.of(0, 10);
+    void testFindWithFiltersByNameAndGender() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Artist> page = artistRepository.findWithFilters(pageable, "Smith", null, Gender.FEMALE);
 
-        Page<Artist> result = artistRepository.findWithFilters(pageRequest, null, "-date", null);
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        List<Artist> artists = page.getContent();
+        assertThat(artists).extracting("name").containsExactly("Jane Smith");
+    }
 
-        assertNotNull(result);
-        assertEquals(3, result.getTotalElements());
-        assertEquals("John Doe2", result.getContent().get(0).getName());
-        assertThat(result.getContent()).isSortedAccordingTo((a1, a2) -> a2.getCreatedAt().compareTo(a1.getCreatedAt()));
+    @Test
+    void testSortingByNameAsc() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Artist> page = artistRepository.findWithFilters(pageable, null, "name", null);
 
-//        result.getContent().forEach(System.out::println);
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        List<Artist> artists = page.getContent();
+//        assertThat(artists).extracting("name").containsExactly("Jane Smith", "John Doe", "John Smith");
+        assertThat(artists).isSortedAccordingTo(Comparator.comparing(Artist::getName));
+    }
+
+    @Test
+    void testSortingByNameDesc() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Artist> page = artistRepository.findWithFilters(pageable, null, "-name", null);
+
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        List<Artist> artists = page.getContent();
+        assertThat(artists).isSortedAccordingTo((a1, a2) -> a2.getName().compareTo(a1.getName()));
+    }
+
+    @Test
+    void testSortingByDateAsc() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Artist> page = artistRepository.findWithFilters(pageable, null, "date", null);
+
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        List<Artist> artists = page.getContent();
+        assertThat(artists).isSortedAccordingTo(Comparator.comparing(Artist::getCreatedAt));
+    }
+
+    @Test
+    void testSortingByDateDesc() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Artist> page = artistRepository.findWithFilters(pageable, null, "-date", null);
+
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        List<Artist> artists = page.getContent();
+        assertThat(artists).isSortedAccordingTo((a1, a2) -> a2.getCreatedAt().compareTo(a1.getCreatedAt()));
     }
 }

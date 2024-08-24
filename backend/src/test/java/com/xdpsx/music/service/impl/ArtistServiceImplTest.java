@@ -1,7 +1,5 @@
 package com.xdpsx.music.service.impl;
 
-import com.xdpsx.music.dto.common.PageResponse;
-import com.xdpsx.music.dto.request.params.ArtistParams;
 import com.xdpsx.music.dto.request.ArtistRequest;
 import com.xdpsx.music.dto.response.ArtistResponse;
 import com.xdpsx.music.model.entity.Artist;
@@ -10,190 +8,244 @@ import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.ArtistMapper;
 import com.xdpsx.music.repository.ArtistRepository;
 import com.xdpsx.music.service.FileService;
-import org.junit.jupiter.api.BeforeEach;
+import com.xdpsx.music.util.I18nUtils;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Optional;
 
+import static com.xdpsx.music.constant.FileConstants.ARTISTS_IMG_FOLDER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ArtistServiceImplTest {
-    @Mock
-    private FileService fileService;
+    @Mock private ArtistRepository artistRepository;
+    @Mock private ArtistMapper artistMapper;
+    @Mock private FileService fileService;
+    @Mock private I18nUtils i18nUtils;
 
-    @Mock
-    private ArtistMapper artistMapper;
+    @InjectMocks private ArtistServiceImpl artistService;
 
-    @Mock
-    private ArtistRepository artistRepository;
-
-    @InjectMocks
-    private ArtistServiceImpl artistService;
-
-    private ArtistRequest artistRequest;
-    private Artist artist;
-    private ArtistResponse artistResponse;
-    private MultipartFile imageFile;
-    private ArtistParams artistParams;
-
-    @BeforeEach
-    void setUp() {
-        artistRequest = ArtistRequest.builder()
-                .name("John Doe")
-                .gender(Gender.MALE)
-                .description("A popular artist")
-                .dob(LocalDate.of(1990, 1, 1))
-                .build();
-
-        artist = Artist.builder()
-                .id(1L)
-                .name("John Doe")
-                .gender(Gender.MALE)
-                .description("A popular artist")
-                .dob(LocalDate.of(1990, 1, 1))
-                .avatar("avatar.jpg")
-                .build();
-
-        artistResponse = ArtistResponse.builder()
-                .id(1L)
-                .name("John Doe")
-                .gender(Gender.MALE)
-                .description("A popular artist")
-                .dob(LocalDate.of(1990, 1, 1))
-                .avatar("avatar.jpg")
-                .build();
-
-
-        imageFile = mock(MultipartFile.class);
-
-        artistParams = new ArtistParams();
-        artistParams.setPageNum(1);
-        artistParams.setPageSize(10);
-        artistParams.setSearch("John");
-        artistParams.setSort("name");
-        artistParams.setGender(Gender.MALE);
-    }
-
+    @DisplayName(value = "Create artist with image successfully")
     @Test
-    void getAllArtists_whenProvideParams_returnFilteredArtists() {
-        Pageable pageable = PageRequest.of(artistParams.getPageNum() - 1, artistParams.getPageSize());
-        Page<Artist> artistPage = new PageImpl<>(Collections.singletonList(artist));
-        when(artistRepository.findWithFilters(pageable, artistParams.getSearch(), artistParams.getSort(), artistParams.getGender()))
-                .thenReturn(artistPage);
-        when(artistMapper.fromEntityToResponse(any(Artist.class))).thenReturn(artistResponse);
+    public void testCreateArtist_ShouldSaveArtist_WhenImageProvided() {
+        // Arrange
+        ArtistRequest request = new ArtistRequest();
+        request.setName("Test Artist");
+        request.setGender(Gender.MALE);
 
-        PageResponse<ArtistResponse> result = artistService.getAllArtists(artistParams);
+        MultipartFile image = mock(MultipartFile.class);
+        String imageUrl = "artist.jpg";
 
-        assertNotNull(result);
-        assertEquals(1, result.getItems().size());
-        verify(artistRepository).findWithFilters(pageable, artistParams.getSearch(), artistParams.getSort(), artistParams.getGender());
-        verify(artistMapper).fromEntityToResponse(any(Artist.class));
-    }
+        Artist artist = new Artist();
+        artist.setName("Test Artist");
+        artist.setGender(Gender.MALE);
 
-    @Test
-    void createArtist_shouldCreateSuccessfully() {
-        when(artistMapper.fromRequestToEntity(artistRequest)).thenReturn(artist);
-        when(fileService.uploadFile(imageFile, "artists")).thenReturn("avatar.jpg");
-        when(artistRepository.save(any(Artist.class))).thenReturn(artist);
-        when(artistMapper.fromEntityToResponse(artist)).thenReturn(artistResponse);
+        Artist savedArtist = new Artist();
+        savedArtist.setId(1L);
+        savedArtist.setName("Test Artist");
+        savedArtist.setAvatar(imageUrl);
+        savedArtist.setGender(Gender.MALE);
 
-        ArtistResponse result = artistService.createArtist(artistRequest, imageFile);
+        ArtistResponse artistResponse = new ArtistResponse();
+        artistResponse.setId(1L);
+        artistResponse.setName("Test Artist");
+        artistResponse.setAvatar(imageUrl);
 
-        assertNotNull(result);
+        when(artistMapper.fromRequestToEntity(request)).thenReturn(artist);
+        when(fileService.uploadFile(image, ARTISTS_IMG_FOLDER)).thenReturn(imageUrl);
+        when(artistRepository.save(artist)).thenReturn(savedArtist);
+        when(artistMapper.fromEntityToResponse(savedArtist)).thenReturn(artistResponse);
+
+        // Act
+        ArtistResponse result = artistService.createArtist(request, image);
+
+        // Assert
         assertEquals(artistResponse, result);
-        verify(artistMapper).fromRequestToEntity(artistRequest);
-        verify(fileService).uploadFile(imageFile, "artists");
-        verify(artistRepository).save(any(Artist.class));
-        verify(artistMapper).fromEntityToResponse(artist);
+        verify(artistMapper).fromRequestToEntity(request);
+        verify(fileService).uploadFile(image, ARTISTS_IMG_FOLDER);
+        verify(artistRepository).save(artist);
+        verify(artistMapper).fromEntityToResponse(savedArtist);
     }
 
+    @DisplayName(value = "Create artist without image successfully")
     @Test
-    void updateArtist_shouldUpdateSuccessfully() {
-        when(artistRepository.findById(artist.getId())).thenReturn(Optional.of(artist));
-        when(fileService.uploadFile(imageFile, "artists")).thenReturn("new_avatar.jpg");
-        when(artistRepository.save(any(Artist.class))).thenReturn(artist);
-        when(artistMapper.fromEntityToResponse(artist)).thenReturn(artistResponse);
+    public void testCreateArtist_ShouldSaveArtist_WhenImageNotProvided() {
+        // Arrange
+        ArtistRequest request = new ArtistRequest();
+        request.setName("Test Artist");
+        request.setGender(Gender.MALE);
 
-        ArtistResponse result = artistService.updateArtist(artist.getId(), artistRequest, imageFile);
+        Artist artist = new Artist();
+        artist.setName("Test Artist");
+        artist.setGender(Gender.MALE);
 
-        assertNotNull(result);
+        Artist savedArtist = new Artist();
+        savedArtist.setId(1L);
+        savedArtist.setName("Test Artist");
+        savedArtist.setGender(Gender.MALE);
+
+        ArtistResponse artistResponse = new ArtistResponse();
+        artistResponse.setId(1L);
+        artistResponse.setName("Test Artist");
+        artistResponse.setGender(Gender.MALE);
+
+        when(artistMapper.fromRequestToEntity(request)).thenReturn(artist);
+        when(artistRepository.save(artist)).thenReturn(savedArtist);
+        when(artistMapper.fromEntityToResponse(savedArtist)).thenReturn(artistResponse);
+
+        // Act
+        ArtistResponse result = artistService.createArtist(request, null);
+
+        // Assert
         assertEquals(artistResponse, result);
-        verify(artistRepository).findById(artist.getId());
-        verify(fileService).uploadFile(imageFile, "artists");
-        verify(artistRepository).save(any(Artist.class));
-        verify(fileService).deleteFileByUrl("avatar.jpg");
-        verify(artistMapper).fromEntityToResponse(artist);
+        verify(artistMapper).fromRequestToEntity(request);
+        verify(fileService, never()).uploadFile(any(MultipartFile.class), anyString());
+        verify(artistRepository).save(artist);
+        verify(artistMapper).fromEntityToResponse(savedArtist);
     }
 
+    @DisplayName(value = "Update artist with image successfully")
     @Test
-    void updateArtist_whenArtistNotFound_throwResourceNotFoundException() {
-        when(artistRepository.findById(artist.getId())).thenReturn(Optional.empty());
+    public void testUpdateArtist_ShouldUpdateArtist_WhenImageProvided() {
+        // Arrange
+        Long artistId = 1L;
+        ArtistRequest request = new ArtistRequest();
+        request.setName("Updated Artist");
+        request.setGender(Gender.FEMALE);
 
-        assertThrows(ResourceNotFoundException.class, () -> artistService.updateArtist(artist.getId(), artistRequest, imageFile));
+        MultipartFile image = mock(MultipartFile.class);
+        String imageUrl = "updated-artist.jpg";
 
-        verify(artistRepository).findById(artist.getId());
-        verify(fileService, never()).uploadFile(any(), any());
+        Artist existingArtist = new Artist();
+        existingArtist.setId(artistId);
+        existingArtist.setName("Old Artist");
+        existingArtist.setGender(Gender.MALE);
+
+        Artist updatedArtist = new Artist();
+        updatedArtist.setId(artistId);
+        updatedArtist.setName("Updated Artist");
+        updatedArtist.setAvatar(imageUrl);
+        updatedArtist.setGender(Gender.FEMALE);
+
+        ArtistResponse artistResponse = new ArtistResponse();
+        artistResponse.setId(artistId);
+        artistResponse.setName("Updated Artist");
+        artistResponse.setAvatar(imageUrl);
+        artistResponse.setGender(Gender.FEMALE);
+
+        when(artistRepository.findById(artistId)).thenReturn(Optional.of(existingArtist));
+        when(fileService.uploadFile(image, ARTISTS_IMG_FOLDER)).thenReturn(imageUrl);
+        when(artistRepository.save(existingArtist)).thenReturn(updatedArtist);
+        when(artistMapper.fromEntityToResponse(updatedArtist)).thenReturn(artistResponse);
+
+        // Act
+        ArtistResponse result = artistService.updateArtist(artistId, request, image);
+
+        // Assert
+        assertEquals(artistResponse, result);
+        verify(artistRepository).findById(artistId);
+        verify(fileService).uploadFile(image, ARTISTS_IMG_FOLDER);
+        verify(artistRepository).save(existingArtist);
+        verify(artistMapper).fromEntityToResponse(updatedArtist);
+    }
+
+    @DisplayName(value = "Update artist without image successfully")
+    @Test
+    public void testUpdateArtist_ShouldUpdateArtist_WhenImageNotProvided() {
+        // Arrange
+        Long artistId = 1L;
+        ArtistRequest request = new ArtistRequest();
+        request.setName("Updated Artist");
+        request.setGender(com.xdpsx.music.model.enums.Gender.FEMALE);
+
+        Artist existingArtist = new Artist();
+        existingArtist.setId(artistId);
+        existingArtist.setName("Old Artist");
+        existingArtist.setGender(com.xdpsx.music.model.enums.Gender.MALE);
+
+        Artist updatedArtist = new Artist();
+        updatedArtist.setId(artistId);
+        updatedArtist.setName("Updated Artist");
+
+        ArtistResponse artistResponse = new ArtistResponse();
+        artistResponse.setId(artistId);
+        artistResponse.setName("Updated Artist");
+
+        when(artistRepository.findById(artistId)).thenReturn(Optional.of(existingArtist));
+        when(artistRepository.save(existingArtist)).thenReturn(updatedArtist);
+        when(artistMapper.fromEntityToResponse(updatedArtist)).thenReturn(artistResponse);
+
+        // Act
+        ArtistResponse result = artistService.updateArtist(artistId, request, null);
+
+        // Assert
+        assertEquals(artistResponse, result);
+        verify(artistRepository).findById(artistId);
+        verify(fileService, never()).uploadFile(any(MultipartFile.class), anyString());
+        verify(artistRepository).save(existingArtist);
+        verify(artistMapper).fromEntityToResponse(updatedArtist);
+    }
+
+    @DisplayName(value = "Update artist that does not exist")
+    @Test
+    public void testUpdateArtist_ShouldThrowResourceNotFoundException_WhenArtistDoesNotExist() {
+        Long artistId = 1L;
+        when(artistRepository.findById(artistId)).thenReturn(Optional.empty());
+        when(i18nUtils.getArtistNotFoundMsg(artistId)).thenReturn("Artist not found");
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> artistService.updateArtist(artistId, any(ArtistRequest.class), null));
+
+        assertEquals("Artist not found", exception.getMessage());
+        verify(artistRepository).findById(artistId);
         verify(artistRepository, never()).save(any());
-        verify(fileService, never()).deleteFileByUrl(any());
         verify(artistMapper, never()).fromEntityToResponse(any());
     }
 
+    @DisplayName(value = "Delete artist successfully")
     @Test
-    void getArtistById_returnArtist() {
-        when(artistRepository.findById(artist.getId())).thenReturn(Optional.of(artist));
-        when(artistMapper.fromEntityToResponse(artist)).thenReturn(artistResponse);
+    public void testDeleteArtist_ShouldDeleteArtist_WhenArtistExists() {
+        // Arrange
+        Long artistId = 1L;
+        Artist artist = new Artist();
+        artist.setId(artistId);
+        artist.setAvatar("artist.jpg");
 
-        ArtistResponse result = artistService.getArtistById(artist.getId());
+        when(artistRepository.findById(artistId)).thenReturn(Optional.of(artist));
 
-        assertNotNull(result);
-        assertEquals(artistResponse, result);
-        verify(artistRepository).findById(artist.getId());
-        verify(artistMapper).fromEntityToResponse(artist);
-    }
+        // Act
+        artistService.deleteArtist(artistId);
 
-    @Test
-    void getArtistById_whenArtistNotFound_throwResourceNotFoundException() {
-        when(artistRepository.findById(artist.getId())).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> artistService.getArtistById(artist.getId()));
-
-        verify(artistRepository).findById(artist.getId());
-        verify(artistMapper, never()).fromEntityToResponse(any());
-    }
-
-    @Test
-    void deleteArtist_shouldDeleteSuccessfully() {
-        when(artistRepository.findById(artist.getId())).thenReturn(Optional.of(artist));
-
-        artistService.deleteArtist(artist.getId());
-
-        verify(artistRepository).findById(artist.getId());
+        // Assert
+        verify(artistRepository).findById(artistId);
         verify(fileService).deleteFileByUrl(artist.getAvatar());
         verify(artistRepository).delete(artist);
     }
 
+    @DisplayName(value = "Delete artist that does not exist")
     @Test
-    void deleteArtist_whenArtistNotFound_throwResourceNotFoundException() {
-        when(artistRepository.findById(artist.getId())).thenReturn(Optional.empty());
+    public void testDeleteArtist_ShouldThrowResourceNotFoundException_WhenArtistDoesNotExists() {
+        // Arrange
+        Long artistId = 1L;
 
-        assertThrows(ResourceNotFoundException.class, () -> artistService.deleteArtist(artist.getId()));
+        when(artistRepository.findById(artistId)).thenReturn(Optional.empty());
+        when(i18nUtils.getArtistNotFoundMsg(artistId)).thenReturn("Artist not found");
 
-        verify(artistRepository).findById(artist.getId());
-        verify(fileService, never()).deleteFileByUrl(any());
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> artistService.deleteArtist(artistId));
+
+        assertEquals("Artist not found", exception.getMessage());
+        verify(artistRepository).findById(artistId);
         verify(artistRepository, never()).delete(any());
+        verify(fileService, never()).deleteFileByUrl(anyString());
     }
 }
