@@ -1,5 +1,6 @@
 package com.xdpsx.music.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Setter
@@ -11,6 +12,7 @@ public class UserResponse {
     private String name;
     private String avatar;
     private String email;
+    @JsonProperty("account_locked")
     private boolean accountLocked;
     private boolean enabled;
 }

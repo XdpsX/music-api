@@ -10,31 +10,31 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class Links {
     public static void addLinksToGenre(GenreResponse response){
         Link albumsLink = linkTo(methodOn(GenreController.class).getAlbumsByGenre(response.getId(), null))
-                .withRel("genreAlbums");
+                .withRel("genre_albums");
         Link tracksLink = linkTo(methodOn(GenreController.class).getTracksByGenre(response.getId(), null))
-                .withRel("genreTracks");
+                .withRel("genre_tracks");
         response.addCustomLinks(albumsLink, tracksLink);
     }
 
     public static void addLinksToArtist(ArtistResponse response){
         Link albumsLink = linkTo(methodOn(ArtistController.class).getAlbumsByArtist(response.getId(), null))
-                .withRel("artistAlbums");
+                .withRel("artist_albums");
         Link tracksLink = linkTo(methodOn(ArtistController.class).getTracksByArtist(response.getId(), null))
-                .withRel("artistTracks");
+                .withRel("artist_tracks");
         response.addCustomLinks(albumsLink, tracksLink);
     }
 
     public static void addLinksToAlbum(AlbumResponse response){
         Link tracksLink = linkTo(methodOn(AlbumController.class).getTracksByAlbum(response.getId(), null))
-                .withRel("albumTracks");
+                .withRel("album_tracks");
         response.addCustomLinks(tracksLink);
     }
 
     public static void addLinksToTrack(TrackResponse response){
         Link likeLink = linkTo(methodOn(TrackController.class).likeTrack(response.getId()))
-                .withRel("likeTrack");
+                .withRel("likes_track");
         Link unlikeLink = linkTo(methodOn(TrackController.class).unlikeTrack(response.getId()))
-                .withRel("unlikeTrack");
+                .withRel("unlikes_track");
         response.addCustomLinks(likeLink, unlikeLink);
     }
 
@@ -48,11 +48,11 @@ public class Links {
 
     public static void addLinksToPlaylist(PlaylistResponse response){
         Link tracksLink = linkTo(methodOn(PlaylistController.class).getTracksByPlaylist(response.getId(), null))
-                .withRel("playlistTracks");
+                .withRel("playlist_tracks");
         Link addTrackLink = linkTo(methodOn(PlaylistController.class).addTrackToPlaylist(response.getId(), null))
-                .withRel("addTrack");
+                .withRel("add_track");
         Link removeTrackLink = linkTo(methodOn(PlaylistController.class).removeTrackFromPlaylist(response.getId(), null))
-                .withRel("removeTrack");
+                .withRel("remove_track");
         response.addCustomLinks(tracksLink,addTrackLink, removeTrackLink);
     }
 }

@@ -8,7 +8,7 @@ public class PageConstants {
 
     public final static String DATE_FIELD = "date";
     public final static String NAME_FIELD = "name";
-    public final static String TOTAL_TRACKS_FIELD = "totalTracks";
-    public final static String TOTAL_LIKES_FIELD = "totalLikes";
+    public final static String TOTAL_TRACKS_FIELD = "tracks";
+    public final static String TOTAL_LIKES_FIELD = "likes";
     public final static String LISTENING_FIELD = "listening";
 }

@@ -3,6 +3,7 @@ package com.xdpsx.music.dto.response;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.*;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Links;
@@ -19,12 +20,19 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonPropertyOrder({"id", "name", "image", "releaseDate", "totalTracks", "genre", "artists", "linksMap"})
 public class AlbumResponse extends RepresentationModel<AlbumResponse> implements Serializable {
     private Long id;
     private String name;
     private String image;
+
+    @JsonProperty("release_date")
     private LocalDate releaseDate;
-    private int totalTracks;
+
+    @JsonProperty("total_tracks")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer totalTracks;
+
     private GenreResponse genre;
     private List<ArtistResponse> artists;
 

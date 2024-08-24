@@ -1,5 +1,6 @@
 package com.xdpsx.music.dto.common;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.RepresentationModel;
@@ -15,9 +16,17 @@ import java.util.Collection;
 @Builder
 public class PageResponse<T> extends RepresentationModel<PageResponse<T>> implements Serializable {
     private Collection<T> items;
+
+    @JsonProperty("page_num")
     private int pageNum;
+
+    @JsonProperty("page_size")
     private int pageSize;
+
+    @JsonProperty("total_items")
     private long totalItems;
+
+    @JsonProperty("total_pages")
     private int totalPages;
 
     public void addPaginationLinks(String baseUri) {

@@ -3,6 +3,7 @@ package com.xdpsx.music.dto.response;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.xdpsx.music.model.enums.Gender;
 import lombok.*;
 import org.springframework.hateoas.Link;
@@ -20,6 +21,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonPropertyOrder({"id", "name", "avatar", "gender", "dob", "description", "createdAt", "linksMap"})
 public class ArtistResponse extends RepresentationModel<ArtistResponse> implements Serializable {
     private Long id;
     private String name;
@@ -27,6 +29,7 @@ public class ArtistResponse extends RepresentationModel<ArtistResponse> implemen
     private Gender gender;
     private String description;
     private LocalDate dob;
+    @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
