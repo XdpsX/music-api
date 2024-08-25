@@ -39,7 +39,7 @@ public class EmailServiceImpl implements EmailService {
 
         String template = templateEngine.process(templateName, context);
 
-        helper.setFrom("contact@xdpsx.com");
+        helper.setFrom("no-reply@xdpsx.com");
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(template, true);

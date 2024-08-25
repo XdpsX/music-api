@@ -29,19 +29,15 @@ spring:
           trust: localhost
         auth: true
         starttls:
-          enabled: true
+          enable: true
         connection-timeout: 5000
         timeout: 3000
         write-timeout: 5000
 
-server:
-  servlet:
-    context-path: /api/v1
 app:
   mail:
     frontend:
-      root-url: http://localhost:8081
-      activation-url: ${app.mail.frontend.root-url}/activate-account
+      activation-url: http://localhost:3000/activate-account
   security:
     jwt:
       secret-key: RlNhbjBsM21nVFZHcElGck83dFFLWGlrcFBRRGhyTXhKV240ZmE5
