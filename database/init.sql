@@ -126,8 +126,6 @@ CREATE INDEX idx_tokens_refresh_token ON tokens (refresh_token);
 CREATE INDEX idx_tracks_genre_id ON tracks (genre_id);
 CREATE INDEX idx_tracks_album_id ON tracks (album_id);
 
-CREATE INDEX idx_tracks_album_id_track_number ON tracks(album_id, track_number);
-
 CREATE INDEX idx_playlists_id_owner_id ON playlists(id, owner_id);
 
 -- 3. TRIGGERS
