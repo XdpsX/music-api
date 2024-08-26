@@ -22,6 +22,9 @@ spring-doc:
   api-docs:
     path: /docs
 
+app:
+  url: ${BACKEND_URL}
+
 aws:
   region: ${AWS_REGION}
   accessKey: ${AWS_ACCESS_KEY}
