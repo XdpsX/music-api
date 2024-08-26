@@ -5,6 +5,7 @@ import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.TrackRequest;
 import com.xdpsx.music.dto.request.params.TrackParams;
 import com.xdpsx.music.dto.response.TrackResponse;
+import com.xdpsx.music.exception.TooManyRequestsException;
 import com.xdpsx.music.mapper.PageMapper;
 import com.xdpsx.music.model.entity.*;
 import com.xdpsx.music.exception.ResourceNotFoundException;
@@ -201,6 +202,8 @@ public class TrackServiceImpl implements TrackService {
             trackRepository.save(track);
 
             cacheService.setValue(listeningKey, "1", track.getDurationMs());
+        }else {
+            throw new TooManyRequestsException("Increase listening count too much. Try again later");
         }
 
     }
