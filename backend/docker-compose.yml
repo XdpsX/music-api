@@ -38,6 +38,25 @@ services:
       - MAILDEV_INCOMING_USER=xdpsx
       - MAILDEV_INCOMING_PASS=xdpsxpass
     restart: always
+  music-api:
+    image: "dranhata/music-api"
+    container_name: music-api
+    ports:
+      - "8081:8080"
+    networks:
+      - music-app
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/music_app
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      AWS_BUCKET_NAME: ${AWS_BUCKET_NAME}
+      SPRING_REDIS_HOST: redis
+    depends_on:
+      - postgres
+      - redis
+      - maildev
 
 networks:
   music-app:
