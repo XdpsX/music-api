@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env.dev[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/music_app
     username: xdpsx
