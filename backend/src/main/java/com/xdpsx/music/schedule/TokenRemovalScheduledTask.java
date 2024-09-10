@@ -18,7 +18,7 @@ public class TokenRemovalScheduledTask {
     private final ConfirmTokenRepository confirmTokenRepository;
     private final TokenRepository tokenRepository;
 
-    @Scheduled(cron = "0 0 0 * * ?") //every day at midnight
+    @Scheduled(cron = "0 0 0 * * ?")
 //    @Scheduled(cron = "0 */1 * * * ?")
     public void deleteExpiredTokens() {
         int tokensDeleted = confirmTokenRepository.deleteExpiredTokens(LocalDateTime.now());
