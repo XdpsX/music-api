@@ -1,4 +1,4 @@
-package com.xdpsx.music.service.impl;
+package com.xdpsx.music.unit.service;
 
 import com.xdpsx.music.dto.request.GenreRequest;
 import com.xdpsx.music.dto.response.GenreResponse;
@@ -8,6 +8,7 @@ import com.xdpsx.music.exception.ResourceNotFoundException;
 import com.xdpsx.music.mapper.GenreMapper;
 import com.xdpsx.music.repository.GenreRepository;
 import com.xdpsx.music.service.FileService;
+import com.xdpsx.music.service.impl.GenreServiceImpl;
 import com.xdpsx.music.util.I18nUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
