@@ -82,6 +82,8 @@ public class UserServiceImpl implements UserService {
         if (!user.isAccountLocked()){
             user.setAccountLocked(true);
             userRepository.save(user);
+        }else {
+            throw new BadRequestException("User has already locked");
         }
     }
 
@@ -92,6 +94,8 @@ public class UserServiceImpl implements UserService {
         if (user.isAccountLocked()){
             user.setAccountLocked(false);
             userRepository.save(user);
+        }else {
+            throw new BadRequestException("User has already unlocked");
         }
     }
 

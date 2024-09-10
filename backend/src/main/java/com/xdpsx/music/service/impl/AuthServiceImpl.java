@@ -78,19 +78,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendActivateAccountEmail(User user) throws MessagingException {
-        String sendMailKey = Keys.getSendMailKey(user.getId());
-        boolean exists = cacheService.hasKey(sendMailKey);
-        if (exists){
-            throw new TooManyRequestsException(i18nUtils.getResendMailMsg(DELAY_SEND_MAIL_MINUTES));
-        }
-
-        List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
-        if (existingTokens.size() >= EMAILS_PER_DAY){
-            throw new TooManyRequestsException(i18nUtils.getLimitMailMsg(EMAILS_PER_DAY));
-        }
-        String activeCode = tokenService.generateAndSaveConfirmToken(user, ACTIVE_CODE_MINUTES);
-
-        cacheService.setValue(sendMailKey, "1", DELAY_SEND_MAIL_MINUTES*60*1000);
+        String activeCode = validateAndGenCode(user);
 
         Map<String, Object> properties = new HashMap<>();
         properties.put("username", user.getName());
@@ -105,9 +93,26 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
+    private String validateAndGenCode(User user) {
+        String sendMailKey = Keys.getSendMailKey(user.getId());
+        boolean exists = cacheService.hasKey(sendMailKey);
+        if (exists){
+            throw new TooManyRequestsException(i18nUtils.getResendMailMsg(DELAY_SEND_MAIL_MINUTES));
+        }
+
+        List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
+        if (existingTokens.size() >= EMAILS_PER_DAY){
+            throw new TooManyRequestsException(i18nUtils.getLimitMailMsg(EMAILS_PER_DAY));
+        }
+        String activeCode = tokenService.generateAndSaveConfirmToken(user, ACTIVE_CODE_MINUTES);
+
+        cacheService.setValue(sendMailKey, "1", DELAY_SEND_MAIL_MINUTES*60*1000);
+        return activeCode;
+    }
+
     @Transactional
     @Override
-    public TokenResponse activateAccount(String activeCode) {
+    public TokenResponse activateAccount(String email, String activeCode) {
         var confirmToken = tokenService.findConfirmTokenByCode(activeCode);
         if (LocalDateTime.now().isAfter(confirmToken.getExpiredAt())
                 || confirmToken.isRevoked()
@@ -115,6 +120,9 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException(i18nUtils.getActiveCodeExpiredMsg());
         }
         var user = confirmToken.getUser();
+        if (!user.getEmail().equals(email)){
+            throw new BadRequestException("Invalid token");
+        }
         if (user.isEnabled()){
             throw new BadRequestException(i18nUtils.getActivatedAccountMsg());
         }
@@ -203,20 +211,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void sendResetPasswordEmail(User user) throws MessagingException {
-        String sendMailKey = Keys.getSendMailKey(user.getId());
-        boolean exists = cacheService.hasKey(sendMailKey);
-        if (exists){
-            throw new TooManyRequestsException(i18nUtils.getResendMailMsg(DELAY_SEND_MAIL_MINUTES));
-        }
-
-        List<ConfirmToken> existingTokens =  tokenService.getTodayConfirmTokensByUser(user);
-        if (existingTokens.size() >= EMAILS_PER_DAY){
-            throw new TooManyRequestsException(i18nUtils.getLimitMailMsg(EMAILS_PER_DAY));
-        }
-
-        String resetCode = tokenService.generateAndSaveConfirmToken(user, ACTIVE_CODE_MINUTES);
-
-        cacheService.setValue(sendMailKey, "1", DELAY_SEND_MAIL_MINUTES*60*1000);
+        String resetCode = validateAndGenCode(user);
 
         Map<String, Object> properties = new HashMap<>();
         properties.put("username", user.getName());

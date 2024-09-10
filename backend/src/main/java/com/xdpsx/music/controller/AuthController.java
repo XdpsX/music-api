@@ -43,9 +43,10 @@ public class AuthController {
     @Operation(summary = "Activate account")
     @GetMapping("/activate-account")
     public ResponseEntity<TokenResponse> confirmAccount(
+            @RequestParam String email,
             @RequestParam String activeCode
     ) {
-        TokenResponse response = authService.activateAccount(activeCode);
+        TokenResponse response = authService.activateAccount(email, activeCode);
         return ResponseEntity.ok(response);
     }
 
