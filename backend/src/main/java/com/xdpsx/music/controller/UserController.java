@@ -1,5 +1,7 @@
 package com.xdpsx.music.controller;
 
+import com.xdpsx.music.dto.common.ErrorDTO;
+import com.xdpsx.music.dto.common.ErrorDetails;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.ChangePasswordRequest;
 import com.xdpsx.music.dto.request.UserProfileRequest;
@@ -15,6 +17,10 @@ import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.service.UserService;
 import com.xdpsx.music.util.I18nUtils;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -39,6 +45,18 @@ public class UserController {
     private final I18nUtils i18nUtils;
 
     @Operation(summary = "Change account password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ok",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessageResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(oneOf = { ErrorDTO.class, ErrorDetails.class })
+                    )),
+    })
     @PatchMapping("/change-password")
     public ResponseEntity<MessageResponse> changePassword(
             @Valid @RequestBody ChangePasswordRequest request
@@ -49,6 +67,13 @@ public class UserController {
     }
 
     @Operation(summary = "Get user profile")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ok",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileResponse.class))
+            )
+    })
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getUserProfile() {
         User loggedUser = userContext.getLoggedUser();
@@ -57,6 +82,18 @@ public class UserController {
     }
 
     @Operation(summary = "Update user profile")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ok",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDetails.class )
+                    )),
+    })
     @PutMapping(path="/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserProfileResponse> updateUserProfile(
             @ParameterObject @Valid @ModelAttribute UserProfileRequest request,
@@ -67,6 +104,23 @@ public class UserController {
     }
 
     @Operation(summary = "Lock user account", description = "Need Role Admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ok",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessageResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+    })
     @PutMapping("/{userId}/lock")
     public ResponseEntity<MessageResponse> lockUser(@PathVariable Long userId) {
         userService.lockUser(userId);
@@ -74,6 +128,23 @@ public class UserController {
     }
 
     @Operation(summary = "Unlock user account", description = "Need Role Admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ok",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessageResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+    })
     @PutMapping("/{userId}/unlock")
     public ResponseEntity<MessageResponse> unlockUser(@PathVariable Long userId) {
         userService.unlockUser(userId);
@@ -81,6 +152,14 @@ public class UserController {
     }
 
     @Operation(summary = "Delete user by id", description = "Need Role Admin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "No Content"),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+    })
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId){
         userService.deleteUserById(userId);

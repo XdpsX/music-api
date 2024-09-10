@@ -1,5 +1,7 @@
 package com.xdpsx.music.controller;
 
+import com.xdpsx.music.dto.common.ErrorDTO;
+import com.xdpsx.music.dto.common.ErrorDetails;
 import com.xdpsx.music.dto.common.PageResponse;
 import com.xdpsx.music.dto.request.PlaylistRequest;
 import com.xdpsx.music.dto.request.PlaylistTrackExistsRequest;
@@ -14,6 +16,10 @@ import com.xdpsx.music.service.PlaylistTrackService;
 import com.xdpsx.music.service.TrackService;
 import com.xdpsx.music.util.I18nUtils;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -38,6 +44,23 @@ public class PlaylistController {
     private final I18nUtils i18nUtils;
 
     @Operation(summary = "Create new playlist")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Created",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = PlaylistResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDetails.class)
+                    )),
+            @ApiResponse(responseCode = "409", description = "Duplicate",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+    })
     @PostMapping
     public ResponseEntity<PlaylistResponse> createPlaylist(
             @Valid @RequestBody PlaylistRequest request
@@ -47,6 +70,23 @@ public class PlaylistController {
     }
 
     @Operation(summary = "Get playlist by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ok",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = PlaylistResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDetails.class)
+                    )),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+    })
     @GetMapping("/{id}")
     public ResponseEntity<PlaylistResponse> getPlaylistById(@PathVariable Long id) {
         PlaylistResponse response = playlistService.getPlaylistById(id);
@@ -54,6 +94,18 @@ public class PlaylistController {
     }
 
     @Operation(summary = "Update playlist")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ok",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = PlaylistResponse.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+    })
     @PutMapping("/{id}")
     public ResponseEntity<PlaylistResponse> updatePlaylist(
             @PathVariable Long id,
@@ -64,6 +116,14 @@ public class PlaylistController {
     }
 
     @Operation(summary = "Delete playlist by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "No Content"),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorDTO.class)
+                    )),
+    })
     @DeleteMapping("/{playlistId}")
     public ResponseEntity<Void> deletePlaylist(
             @PathVariable Long playlistId

@@ -26,7 +26,7 @@ public class S3FileService implements FileService {
     @Override
     public String uploadFile(MultipartFile file, String folder) {
         try {
-            String fileName = folder + "/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
+            String fileName = folder + "/" + UUID.randomUUID();
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(file.getSize());
             s3Client.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
