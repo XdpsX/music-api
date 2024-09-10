@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.context.annotation.Profile;
 
-@Profile("!prod")
+@Profile("prod")
 @OpenAPIDefinition(
         info = @Info(
                 title = "Music REST APIs",
@@ -23,8 +23,8 @@ import org.springframework.context.annotation.Profile;
         ),
         servers = {
                 @Server(
-                        description = "Local ENV",
-                        url = "http://localhost:8080${server.servlet.context-path}"
+                        description = "Prod ENV",
+                        url = "${app.url}${server.servlet.context-path}"
                 )
         }
 )
@@ -35,5 +35,5 @@ import org.springframework.context.annotation.Profile;
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER
 )
-public class OpenApiConfig {
+public class OpenApiProdConfig {
 }
